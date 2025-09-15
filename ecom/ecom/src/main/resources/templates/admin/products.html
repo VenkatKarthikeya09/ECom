@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin | Products</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div th:replace="fragments/navbar :: navbar"></div>
+<main class="container my-5 pt-5">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/admin">Manage</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Products</li>
+        </ol>
+    </nav>
+    <div class="d-flex gap-2 mb-4">
+        <button class="btn btn-outline-secondary" onclick="history.back()">&#8592;</button>
+        <button class="btn btn-outline-secondary" onclick="history.forward()">&#8594;</button>
+    </div>
+    <div class="mb-3" th:if="${success}">
+        <div class="alert alert-success" th:text="${success}"></div>
+    </div>
+    <div class="mb-3" th:if="${error}">
+        <div class="alert alert-danger" th:text="${error}"></div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold">Products</h2>
+        <button class="btn btn-gold" data-bs-toggle="collapse" data-bs-target="#createForm">Add Product</button>
+    </div>
+
+    <div id="createForm" class="collapse mb-4">
+        <div class="card card-body">
+            <form method="post" action="/admin/products">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Name</label>
+                        <input class="form-control" name="name" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Price</label>
+                        <input class="form-control" name="price" type="number" step="0.01" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Stock</label>
+                        <input class="form-control" name="stockQuantity" type="number" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Image URL</label>
+                        <input class="form-control" name="imageUrl" required>
+                        <small class="text-muted">Tip: Use direct image URLs (jpg, png, webp). External images are loaded via our proxy for reliability.</small>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="categoryId" required>
+                            <option th:each="c : ${categories}" th:value="${c.categoryId}" th:text="${c.name}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button class="btn btn-primary">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <th:block th:each="p : ${products}">
+                <tr>
+                    <td th:text="${p.productId}"></td>
+                    <td>
+                        <img th:src="@{'/img-proxy'(url=${p.imageUrl})}" loading="lazy" alt="img" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" onerror="this.onerror=null;this.src='https://loremflickr.com/96/96/product'">
+                    </td>
+                    <td th:text="${p.name}"></td>
+                    <td th:text="${p.price}"></td>
+                    <td th:text="${p.stockQuantity}"></td>
+                    <td th:text="${p.category != null ? p.category.name : '—'}"></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" th:data-bs-target="${'#edit-' + p.productId}">Edit</button>
+                        <form th:action="@{'/admin/products/' + ${p.productId} + '/delete'}" method="post" class="d-inline">
+                            <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete product?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr class="collapse" th:id="${'edit-' + p.productId}">
+                    <td colspan="7">
+                        <div class="card card-body">
+                            <form th:action="@{'/admin/products/' + ${p.productId}}" method="post">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Name</label>
+                                        <input class="form-control" name="name" th:value="${p.name}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Price</label>
+                                        <input class="form-control" name="price" type="number" step="0.01" th:value="${p.price}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Stock</label>
+                                        <input class="form-control" name="stockQuantity" type="number" th:value="${p.stockQuantity}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Image URL</label>
+                                        <input class="form-control" name="imageUrl" th:value="${p.imageUrl}" required oninput="this.nextElementSibling.src=this.value">
+                                        <img th:src="@{'/img-proxy'(url=${p.imageUrl})}" loading="lazy" alt="preview" class="mt-2" style="width:120px;height:120px;object-fit:cover;border-radius:8px;" onerror="this.onerror=null;this.src='https://loremflickr.com/240/240/product'">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-control" name="description" rows="4" th:text="${p.description}"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Category</label>
+                                        <select class="form-select" name="categoryId" required>
+                                            <option th:each="c : ${categories}" th:value="${c.categoryId}" th:selected="${p.category != null && p.category.categoryId == c.categoryId}" th:text="${c.name}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <button class="btn btn-primary">Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3" th:if="${page}">
+        <div>Page <span th:text="${page.number + 1}"></span> of <span th:text="${page.totalPages}"></span> — <span th:text="${page.totalElements}"></span> items</div>
+        <div class="btn-group">
+            <a class="btn btn-outline-secondary" th:classappend="${page.first} ? ' disabled'" th:href="@{'/admin/products'(page=${page.number - 1}, size=${page.size})}">&#8592; Prev</a>
+            <a class="btn btn-outline-secondary" th:classappend="${page.last} ? ' disabled'" th:href="@{'/admin/products'(page=${page.number + 1}, size=${page.size})}">Next &#8594;</a>
+        </div>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

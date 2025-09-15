@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Shop | Checkout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <main class="container my-5 pt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <div class="p-5 bg-light rounded-3 shadow-sm">
+                    <h1 class="display-4 fw-bold mb-3">
+                        <i class="bi bi-gear-fill me-2 text-gold"></i>
+                        Checkout in Progress
+                    </h1>
+                    <p class="lead mb-4">
+                        We're currently developing a secure and seamless payment gateway.
+                        This page is in the development stage. Please check back later.
+                    </p>
+                    <hr class="my-4">
+                    <p>
+                        In the meantime, feel free to browse our wide range of products!
+                    </p>
+                    <a href="/" class="btn btn-gold btn-lg mt-3">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-bg-gradient text-white py-4 mt-5 shadow-lg">
+        <div class="container text-center">
+            <p>&copy; 2024 E-Shop. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

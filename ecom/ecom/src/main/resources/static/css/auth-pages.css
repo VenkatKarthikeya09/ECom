@@ -1,0 +1,31 @@
+/* Auth pages enhancement overrides - keep navbar identical to Home */
+
+/* Improve contrast of form card and text against dark backgrounds */
+.auth-page .auth-card { background: rgba(255,255,255,0.08); }
+.auth-page .auth-card-header h1 { color: #ffffff; }
+.auth-page .auth-card p, .auth-page .text-muted { color: rgba(233, 238, 245, 0.9) !important; }
+
+/* Inputs: stronger contrast */
+.auth-page .auth-form .form-control {
+	background-color: rgba(255,255,255,0.12);
+	border-color: rgba(255,255,255,0.22);
+	color: #ffffff;
+}
+.auth-page .auth-form .form-control::placeholder { color: rgba(255,255,255,0.75); }
+
+/* Buttons: keep gradient but add subtle shadow to separate from bg */
+.auth-page .btn-primary { box-shadow: 0 6px 20px rgba(247, 107, 28, 0.25); }
+
+/* Hide navbar search on auth pages if it visually clashes */
+.auth-page #search-form { display: none; }
+
+/* Ensure page content clears navbar height from global site (keeps same navbar size) */
+body.auth-page { padding-top: 70px !important; }
+
+/* Remember me label color */
+body.auth-page .form-check-label { color: #ffffff; }
+
+/* Responsive tweaks */
+@media (max-width: 991.98px) {
+	body.auth-page { padding-top: 78px !important; }
+} 

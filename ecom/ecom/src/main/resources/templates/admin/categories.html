@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin | Categories</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div th:replace="fragments/navbar :: navbar"></div>
+<main class="container my-5 pt-5">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/admin">Manage</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Categories</li>
+        </ol>
+    </nav>
+    <div class="d-flex gap-2 mb-4">
+        <button class="btn btn-outline-secondary" onclick="history.back()">Back</button>
+        <button class="btn btn-outline-secondary" onclick="history.forward()">Forward</button>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold">Categories</h2>
+        <form method="post" action="/admin/categories" class="d-flex gap-2">
+            <input class="form-control" name="name" placeholder="New category name" required>
+            <button class="btn btn-gold">Add</button>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${categories}">
+                <td th:text="${c.categoryId}"></td>
+                <td>
+                    <form th:action="@{'/admin/categories/' + ${c.categoryId}}" method="post" class="d-flex gap-2">
+                        <input class="form-control" name="name" th:value="${c.name}" required>
+                        <button class="btn btn-primary btn-sm">Save</button>
+                    </form>
+                </td>
+                <td>
+                    <form th:action="@{'/admin/categories/' + ${c.categoryId} + '/delete'}" method="post" class="d-inline">
+                        <button class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete this category? (Only if no products)')">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | E‑Shop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/authstyle.css">
+    <link rel="stylesheet" href="/css/auth-pages.css">
+</head>
+<body class="auth-page">
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <section class="auth-hero">
+        <div class="container-lg">
+            <div class="row align-items-center g-4">
+                <div class="col-12 col-lg-6 order-2 order-lg-1">
+                    <div class="auth-card shadow-lg">
+                        <div class="auth-card-header">
+                            <h1 class="mb-1">Welcome back</h1>
+                            <p class="text-muted mb-0">Sign in to continue shopping</p>
+                        </div>
+                        <div class="auth-card-body">
+                            <form action="/login" method="post" class="auth-form">
+                                <div th:if="${param.error}" class="alert alert-danger" role="alert">Invalid username or password.</div>
+                                <div th:if="${param.logout}" class="alert alert-success" role="alert">You have been successfully logged out.</div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="username">Username or Email</label>
+                                    <input type="text" class="form-control form-control-lg" id="username" name="username" placeholder="you@example.com" required>
+    			</div>
+                                <div class="mb-2">
+                                    <label class="form-label" for="password">Password</label>
+                                    <input type="password" class="form-control form-control-lg" id="password" name="password" placeholder="••••••••" required>
+    			</div>
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="true" id="rememberMe" name="remember-me">
+                                        <label class="form-check-label" for="rememberMe">Remember me</label>
+  				</div>
+                                    <a href="#" class="small text-decoration-none">Forgot password?</a>
+        		</div>
+                                <button type="submit" class="btn btn-primary w-100 btn-lg">Sign In</button>
+                            </form>
+                            <p class="text-center mt-4 mb-0 text-muted">New to E‑Shop? <a href="/register" class="link-accent">Create an account</a></p>
+    		</div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6 order-1 order-lg-2">
+                    <div class="auth-illustration login-illustration position-relative" id="login-illustration">
+                        <div class="slide" id="login-slide-a"></div>
+                        <div class="slide off-right" id="login-slide-b"></div>
+                        <div class="glass-badge">
+                            <span class="badge-title" id="login-badge-title">Fashion & Lifestyle</span>
+                            <span class="badge-text" id="login-badge-text">Clothing, footwear and accessories</span>
+                        </div>
+                    </div>
+                </div>
+                </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function(){
+            const a = document.getElementById('login-slide-a');
+            const b = document.getElementById('login-slide-b');
+            const titleEl = document.getElementById('login-badge-title');
+            const textEl = document.getElementById('login-badge-text');
+            if(!a || !b || !titleEl || !textEl) return;
+
+            const slides = [
+                { url: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1600&auto=format&fit=crop', title: 'Fashion & Lifestyle', text: 'Clothing, footwear and accessories' },
+                { url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1600&auto=format&fit=crop', title: 'Fresh Produce', text: 'Fruits & vegetables, daily needs' },
+                { url: 'https://images.unsplash.com/photo-1510552776732-01acc9a4c83b?q=80&w=1600&auto=format&fit=crop', title: 'Smartphones', text: 'Latest mobiles & accessories' },
+                { url: 'https://images.unsplash.com/photo-1512446816042-444d641267d4?q=80&w=1600&auto=format&fit=crop', title: 'Audio & Music', text: 'Headphones, speakers and soundbars' },
+                { url: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=1600&auto=format&fit=crop', title: 'Home & Kitchen', text: 'Make everyday better' },
+                { url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1600&auto=format&fit=crop', title: 'Fresh Finds', text: 'Daily needs & more' },
+                { url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1600&auto=format&fit=crop', title: 'Gourmet & Groceries', text: 'Snacks, beverages and more' }
+            ];
+
+            let idx = 0;
+            // initialize first
+            a.style.backgroundImage = `linear-gradient(135deg, rgba(245,166,35,0.18), rgba(247,107,28,0.18)), url('${slides[idx].url}')`;
+            titleEl.textContent = slides[idx].title;
+            textEl.textContent = slides[idx].text;
+            let showingA = true; // a is visible, b is parked off-right
+
+            const next = () => {
+                const nextIdx = (idx + 1) % slides.length;
+                const nextUrl = `linear-gradient(135deg, rgba(245,166,35,0.18), rgba(247,107,28,0.18)), url('${slides[nextIdx].url}')`;
+
+                const incoming = showingA ? b : a; // will slide in from right
+                const outgoing = showingA ? a : b; // will slide out to left
+
+                // update caption to match incoming slide immediately
+                titleEl.textContent = slides[nextIdx].title;
+                textEl.textContent = slides[nextIdx].text;
+
+                // prepare incoming
+                incoming.style.backgroundImage = nextUrl;
+                incoming.classList.add('off-right');
+                incoming.classList.remove('off-left');
+
+                // start animation on next frame
+                requestAnimationFrame(() => {
+                    outgoing.classList.add('off-left');
+                    incoming.classList.remove('off-right');
+                });
+
+                setTimeout(() => {
+                    // instantly park outgoing off-right for future use without visible slide
+                    outgoing.classList.add('no-transition');
+                    outgoing.classList.remove('off-left');
+                    outgoing.classList.add('off-right');
+                    // force reflow to apply position without transition
+                    void outgoing.offsetWidth;
+                    outgoing.classList.remove('no-transition');
+
+                    showingA = !showingA;
+                    idx = nextIdx;
+                }, 1100);
+            };
+
+            setInterval(next, 6000);
+
+            // Ensure categories dropdown works on this page
+            document.addEventListener('DOMContentLoaded', function(){
+                if (window.bootstrap) {
+                    const dd = document.getElementById('categoriesDropdown');
+                    if (dd) new bootstrap.Dropdown(dd);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

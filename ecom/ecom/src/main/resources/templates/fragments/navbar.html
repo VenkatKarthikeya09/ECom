@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Navbar Fragment</title>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-dark-blue shadow-sm" th:fragment="navbar">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-gold" href="/">
+            <i class="bi bi-bag-fill me-2"></i> E-Shop
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link text-white-50" href="/" aria-current="page">Home</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link text-white-50" href="/admin_home">Manage</a>
+                </li>
+                <li class="nav-item dropdown" id="categoriesDropdownWrapper">
+                    <a class="nav-link dropdown-toggle text-white-50" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Categories
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
+                        <li th:each="cat : ${allCategories}">
+                            <a class="dropdown-item" th:href="@{/category/{id}(id=${cat.categoryId})}" th:text="${cat.name}">Category</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center me-2 flex-grow-1 justify-content-center position-relative">
+                <form id="search-form" class="w-75" action="/search" method="get">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-pill pe-5" placeholder="Search for products..." id="search-input" name="query">
+                        <span class="input-group-text rounded-pill position-absolute end-0" style="background: none; border: none; z-index: 1;">
+                            <i class="bi bi-search text-gold"></i>
+                        </span>
+                    </div>
+                </form>
+            </div>
+            <div class="d-flex align-items-center">
+                <div sec:authorize="isAnonymous()">
+                    <a class="btn btn-outline-light-gold me-2" href="/login">Login</a>
+                    <a class="btn btn-gold me-2" href="/register">Sign Up</a>
+                </div>
+                <div class="d-flex align-items-center" sec:authorize="isAuthenticated()">
+                    <span class="text-white-50 me-3">Hi, <span sec:authentication="name">User</span></span>
+                    <form th:action="@{/logout}" method="post" class="mb-0">
+                        <button type="submit" class="btn btn-outline-light-gold">Logout</button>
+                    </form>
+                </div>
+                <a class="btn btn-gold position-relative ms-2" href="/cart">
+                    <i class="bi bi-cart-fill"></i> Cart
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-size">0</span>
+                </a>
+                <a class="btn btn-outline-light-gold ms-2 d-flex align-items-center" href="/orders" sec:authorize="isAuthenticated()" title="My Orders">
+                    <i class="bi bi-truck" style="font-size: 1.1rem;"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="loginModalLabel">Sign in</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-0">
+        <form action="/login" method="post">
+          <div class="mb-3">
+            <label class="form-label" for="login-username">Username or Email</label>
+            <input type="text" class="form-control" id="login-username" name="username" placeholder="your.name@example.com" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="login-password">Password</label>
+            <input type="password" class="form-control" id="login-password" name="password" placeholder="********" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Sign In</button>
+        </form>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <small>New here? <a href="#" data-bs-target="#signupModal" data-bs-toggle="modal" data-bs-dismiss="modal">Create an account</a></small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Signup Modal -->
+<div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="signupModalLabel">Create account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-0">
+        <div id="modal-signup-message" class="mb-2"></div>
+        <form id="modal-signup-form">
+          <div class="row g-2">
+            <div class="col">
+              <label class="form-label" for="modal-firstName">First Name</label>
+              <input type="text" class="form-control" id="modal-firstName" required>
+            </div>
+            <div class="col">
+              <label class="form-label" for="modal-lastName">Last Name</label>
+              <input type="text" class="form-control" id="modal-lastName" required>
+            </div>
+          </div>
+          <div class="mb-2 mt-2">
+            <label class="form-label" for="modal-username">Username</label>
+            <input type="text" class="form-control" id="modal-username" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="modal-email">Email</label>
+            <input type="email" class="form-control" id="modal-email" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="modal-password">Password</label>
+            <input type="password" class="form-control" id="modal-password" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="modal-confirmPassword">Confirm Password</label>
+            <input type="password" class="form-control" id="modal-confirmPassword" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 mt-2" id="modal-signup-submit">Create Account</button>
+        </form>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <small>Already have an account? <a href="#" data-bs-target="#loginModal" data-bs-toggle="modal" data-bs-dismiss="modal">Sign in</a></small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cart merge modal -->
+<div class="modal fade" id="mergeCartModal" tabindex="-1" aria-labelledby="mergeCartModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mergeCartModalLabel">Keep your items?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        We found items in your device cart. Do you want to add them to your account cart?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">No, thanks</button>
+        <button type="button" class="btn btn-primary" id="confirm-merge-cart">Add items</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Hide suggestions when modals open
+    const hideSuggestions = () => {
+      const box = document.querySelector('.position-absolute.bg-white.shadow.rounded.w-75.mt-2.p-2');
+      if (box) box.style.display = 'none';
+    };
+    const loginEl = document.getElementById('loginModal');
+    const signupEl = document.getElementById('signupModal');
+    if (loginEl) loginEl.addEventListener('show.bs.modal', hideSuggestions);
+    if (signupEl) signupEl.addEventListener('show.bs.modal', hideSuggestions);
+
+    // Signup modal submission (simple validation, same endpoint)
+    const signupForm = document.getElementById('modal-signup-form');
+    const msg = document.getElementById('modal-signup-message');
+    if (signupForm) {
+      signupForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        msg.innerHTML = '';
+        const firstName = document.getElementById('modal-firstName').value.trim();
+        const lastName = document.getElementById('modal-lastName').value.trim();
+        const username = document.getElementById('modal-username').value.trim();
+        const email = document.getElementById('modal-email').value.trim();
+        const password = document.getElementById('modal-password').value;
+        const confirmPassword = document.getElementById('modal-confirmPassword').value;
+        if (!firstName || !lastName || !username || !email || !password || password !== confirmPassword) {
+          msg.innerHTML = '<div class="alert alert-danger">Please fill all fields correctly.</div>';
+          return;
+        }
+        const btn = document.getElementById('modal-signup-submit');
+        const original = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+        try {
+          const resp = await fetch('/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName, lastName, username, email, password }) });
+          if (resp.ok) {
+            msg.innerHTML = '<div class="alert alert-success">Sign up successful! You can sign in now.</div>';
+            setTimeout(() => {
+              const login = new bootstrap.Modal(document.getElementById('loginModal'));
+              const signup = bootstrap.Modal.getInstance(document.getElementById('signupModal'));
+              if (signup) signup.hide();
+              login.show();
+            }, 600);
+          } else if (resp.status === 409) {
+            msg.innerHTML = '<div class="alert alert-danger">Username or email already exists.</div>';
+          } else {
+            const text = await resp.text();
+            msg.innerHTML = '<div class="alert alert-danger">' + (text || 'Something went wrong') + '</div>';
+          }
+        } catch (err) {
+          msg.innerHTML = '<div class="alert alert-danger">Network error. Try again.</div>';
+        } finally {
+          btn.disabled = false; btn.innerHTML = original;
+        }
+      });
+    }
+
+    // Show merge prompt after login
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mergePrompt') === 'true') {
+      const localCart = JSON.parse(localStorage.getItem('cart') || '{}');
+      if (Object.keys(localCart).length > 0) {
+        const modal = new bootstrap.Modal(document.getElementById('mergeCartModal'));
+        modal.show();
+        document.getElementById('confirm-merge-cart').onclick = async function () {
+          const items = Object.entries(localCart).map(([id, item]) => ({ productId: Number(id), quantity: Number(item.quantity || 1) }));
+          try {
+            const resp = await fetch('/api/cart/merge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(items) });
+            if (resp.ok) {
+              localStorage.removeItem('cart');
+              modal.hide();
+              window.location.href = '/cart';
+            }
+          } catch (e) {
+            console.error('Merge failed', e);
+            modal.hide();
+          }
+        };
+      }
+    }
+
+    // Hover open for categories
+    const dropdown = document.getElementById('categoriesDropdownWrapper');
+    if (dropdown) {
+      dropdown.addEventListener('mouseenter', () => {
+        const toggle = dropdown.querySelector('[data-bs-toggle="dropdown"]');
+        const menu = new bootstrap.Dropdown(toggle);
+        menu.show();
+      });
+      dropdown.addEventListener('mouseleave', () => {
+        const toggle = dropdown.querySelector('[data-bs-toggle="dropdown"]');
+        const menu = new bootstrap.Dropdown(toggle);
+        menu.hide();
+      });
+    }
+  });
+</script>
+
+</body>
+</html> 

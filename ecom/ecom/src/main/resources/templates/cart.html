@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Shop | Shopping Cart</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <main class="container my-5 pt-5">
+        <h2 class="fw-bold mb-4 text-center">Your Shopping Cart</h2>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row" id="cart-items-container">
+                    </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 rounded-4">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">Cart Summary</h5>
+                        <hr>
+                        
+                        <p class="d-flex justify-content-between align-items-center mb-0">
+                            <button class="btn btn-link fw-bold text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#billDetails" aria-expanded="false" aria-controls="billDetails">
+                                Bill Details <i class="bi bi-chevron-down ms-1"></i>
+                            </button>
+                        </p>
+                        <div class="collapse" id="billDetails">
+                            <div class="card card-body p-0 border-0 my-3">
+                                <ul id="bill-details-list" class="list-unstyled mb-0">
+                                    </ul>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal (<span id="cart-item-count">0</span> items)</span>
+                            <span class="fw-bold" id="cart-total-price">₹0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Shipping</span>
+                            <span class="text-success fw-bold">Free</span>
+                        </div>
+                        <div class="d-flex justify-content-between fw-bold fs-5 border-top pt-3">
+                            <span>Total</span>
+                            <span id="final-total-price">₹0.00</span>
+                        </div>
+                        <button id="checkout-btn" class="btn btn-gold w-100 mt-4 rounded-pill" data-requires-auth="true">Proceed to Checkout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-bg-gradient text-white py-4 mt-5 shadow-lg">
+        <div class="container text-center">
+            <p>&copy; 2024 E-Shop. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="cart-notification" class="cart-notification">
+        <img id="notification-img" src="" class="product-img" alt="product image">
+        <div class="message-content">
+            <h6 id="notification-name">Product Name</h6>
+            <p id="notification-message"></p>
+        </div>
+        <button class="close-btn" onclick="hideNotification()">&times;</button>
+    </div>
+
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn-modal">&times;</span>
+            <p>Are you sure you want to remove this item from your cart?</p>
+            <div class="modal-buttons">
+                <button id="confirm-yes" class="btn btn-danger">Yes, remove it</button>
+                <button id="confirm-no" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guest checkout auth prompt modal -->
+    <div class="modal fade" id="authPromptModal" tabindex="-1" aria-labelledby="authPromptModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="authPromptModalLabel">Sign in required</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Please sign in or register to continue your order.
+          </div>
+          <div class="modal-footer">
+            <a href="/login" class="btn btn-outline-primary">Sign In</a>
+            <a href="/register" class="btn btn-primary">Register</a>
+          </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/cart.js"></script>
+    <script>
+        // Enhance checkout to prompt auth for guests
+        document.addEventListener('DOMContentLoaded', function () {
+            const checkoutBtn = document.getElementById('checkout-btn');
+            if (!checkoutBtn) return;
+
+            checkoutBtn.addEventListener('click', async function (e) {
+                const cart = JSON.parse(localStorage.getItem('cart')) || {};
+                if (Object.keys(cart).length === 0) {
+                    alert('Your cart is empty. Please add items before proceeding to checkout.');
+                    return;
+                }
+
+                try {
+                    const resp = await fetch('/api/auth/status', { credentials: 'same-origin' });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data.authenticated) {
+                            window.location.href = '/checkout';
+                        } else {
+                            const modal = new bootstrap.Modal(document.getElementById('authPromptModal'));
+                            modal.show();
+                        }
+                    } else {
+                        const modal = new bootstrap.Modal(document.getElementById('authPromptModal'));
+                        modal.show();
+                    }
+                } catch (err) {
+                    const modal = new bootstrap.Modal(document.getElementById('authPromptModal'));
+                    modal.show();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

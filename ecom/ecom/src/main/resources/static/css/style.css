@@ -1,0 +1,372 @@
+/* Color Palette */
+:root {
+    --primary-color: #0f1c32; /* Dark Blue */
+    --secondary-color: #FFD700; /* Gold */
+    --light-bg-color: #f8f9fa;
+    --card-bg-color: #ffffff;
+    --text-color: #333;
+    --muted-text-color: #6c757d;
+    --red-alert: #dc3545;
+}
+
+/* General Body and Fonts */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-bg-color);
+    color: var(--text-color);
+    padding-top: 70px; /* Add padding to prevent content from hiding behind fixed navbar */
+}
+
+/* --- Navigation Bar --- */
+.bg-dark-blue {
+    background-color: var(--primary-color) !important;
+}
+
+.text-gold {
+    color: var(--secondary-color) !important;
+}
+
+.btn-gold {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: var(--primary-color);
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.btn-gold:hover {
+    background-color: #e6b800; /* A slightly darker gold on hover */
+    border-color: #e6b800;
+}
+
+.btn-outline-light-gold {
+    color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-outline-light-gold:hover {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.25);
+    border-color: var(--secondary-color);
+}
+
+/* --- Hero Section Styles --- */
+.hero-section {
+    height: 70vh;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #2c5282 100%);
+    position: relative;
+    overflow: hidden;
+    padding-top: 70px; /* Adjust for fixed navbar */
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 10%, transparent 70%);
+    transform: rotate(30deg);
+}
+
+.hero-section .container {
+    position: relative;
+    z-index: 1;
+}
+
+.animate-fade-in {
+    animation: fadeIn 1.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Flash Sale Banner --- */
+.flash-sale-banner {
+    background: linear-gradient(90deg, #ff416c, #ff4b2b);
+}
+
+.countdown-timer .time-block {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 0 5px;
+    min-width: 60px;
+    text-align: center;
+}
+
+.countdown-timer .time-block span {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: block;
+}
+
+.countdown-timer .time-block small {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+/* --- Product Card Styles --- */
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--card-bg-color);
+}
+
+.product-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.product-image-container {
+    height: 200px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    background-color: var(--card-bg-color);
+}
+
+.product-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image-container img {
+    transform: scale(1.05);
+}
+
+.sale-tag {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: var(--red-alert);
+    color: #fff;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    z-index: 10;
+}
+
+.price-old {
+    font-size: 0.9rem;
+    color: var(--muted-text-color);
+}
+
+/* --- Why Shop With Us Section --- */
+.feature-card {
+    background-color: var(--card-bg-color);
+    border: 1px solid #e9ecef;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Footer --- */
+.footer-bg-gradient {
+    background: linear-gradient(90deg, #2c3e50 0%, #34495e 100%);
+}
+
+/* --- Add to Cart Notification --- */
+.cart-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1050;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(100%);
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.cart-notification.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.cart-notification .product-img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.cart-notification .message-content h6 {
+    margin-bottom: 2px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.cart-notification .message-content p {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+    color: var(--muted-text-color);
+}
+
+.cart-notification .close-btn {
+    background: none;
+    border: none;
+    color: #a0a0a0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.cart-notification .close-btn:hover {
+    color: var(--text-color);
+}
+
+/* --- Quantity Controls --- */
+.quantity-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.quantity-controls .quantity-input {
+    max-width: 60px;
+    text-align: center;
+    padding: 0.375rem 0.75rem;
+    height: calc(1.5em + 0.75rem + 2px);
+    border-radius: 0.5rem !important;
+}
+
+.quantity-controls .btn {
+    height: calc(1.5em + 0.75rem + 2px);
+    line-height: 1;
+    padding: 0.375rem 0.75rem;
+}
+
+/* --- Modal for Confirmation --- */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    padding: 2.5rem;
+    border-radius: 15px;
+    text-align: center;
+    position: relative;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    animation: scaleIn 0.3s ease-out forwards;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.close-btn-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 2rem;
+    color: #a0a0a0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-btn-modal:hover {
+    color: var(--text-color);
+}
+
+/* Auth pages: blur background behind navbar and center content */
+.auth-page .navbar {
+}
+.auth-page .auth-section {
+    padding-top: 96px; /* avoid overlap with navbar */
+    background: radial-gradient(ellipse at top left, rgba(233,196,106,0.15), rgba(33,37,41,0.85)),
+                radial-gradient(ellipse at bottom right, rgba(231,111,81,0.12), rgba(33,37,41,0.85)),
+                linear-gradient(180deg, rgba(10,22,40,0.95), rgba(10,22,40,0.95));
+}
+.auth-container {
+    backdrop-filter: saturate(140%) blur(6px);
+    -webkit-backdrop-filter: saturate(140%) blur(6px);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Search suggestions overlay fixes */
+.position-absolute.bg-white.shadow.rounded.w-75.mt-2.p-2 {
+    z-index: 1060;
+}
+
+/* Improve buttons for auth */
+.auth-page .btn-primary {
+    background: linear-gradient(135deg, #f5a623, #f76b1c);
+    border: none;
+}
+.auth-page .btn-primary:hover {
+    filter: brightness(1.05);
+}
+
+/* Auth-page specific sizing and layout fixes */
+.auth-page body, body.auth-page {
+    padding-top: 0 !important;
+}
+.auth-page .auth-hero {
+    padding-top: 96px; /* was 120 */
+}
+/* Hide navbar search on auth pages to avoid visual clutter */
+.auth-page #search-form { display: none !important; }
+
+

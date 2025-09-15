@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div th:replace="fragments/navbar :: navbar"></div>
+<main class="container my-5 pt-5">
+    <h3 class="mb-3">Order #<span th:text="${order.orderId}"></span></h3>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Shipping address</div>
+                <div class="card-body">
+                    <div th:text="${order.address.fullName}"></div>
+                    <div th:text="${order.address.addressLine1}"></div>
+                    <div th:text="${order.address.addressLine2}"></div>
+                    <div th:text="${order.address.landmark}"></div>
+                    <div><span th:text="${order.address.area}"></span>, <span th:text="${order.address.city}"></span></div>
+                    <div><span th:text="${order.address.state}"></span> - <span th:text="${order.address.postalCode}"></span></div>
+                    <div th:text="${order.address.country}"></div>
+                    <div class="mt-2"><small>Phone: <span th:text="${order.address.phone}"></span> · Email: <span th:text="${order.address.email}"></span></small></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Summary</div>
+                <div class="card-body">
+                    <div>Status: <span class="badge bg-secondary" th:text="${order.status}"></span></div>
+                    <div class="mt-2">Subtotal: ₹ <span th:text="${#numbers.formatDecimal(order.subtotal, 1, 'POINT', 2, 'NONE')}"></span></div>
+                    <div>Shipping: ₹ <span th:text="${#numbers.formatDecimal(order.shipping, 1, 'POINT', 2, 'NONE')}"></span></div>
+                    <div class="fw-bold">Total: ₹ <span th:text="${#numbers.formatDecimal(order.total, 1, 'POINT', 2, 'NONE')}"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mt-4">Items</h5>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+            <tr>
+                <th>Product</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Subtotal</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="it : ${items}">
+                <td><img th:src="@{'/img-proxy'(url=${it.imageUrl})}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;"></td>
+                <td th:text="${it.productName}"></td>
+                <td>₹ <span th:text="${#numbers.formatDecimal(it.productPrice, 1, 'POINT', 2, 'NONE')}"></span></td>
+                <td th:text="${it.quantity}"></td>
+                <td>₹ <span th:text="${#numbers.formatDecimal(it.productPrice * it.quantity, 1, 'POINT', 2, 'NONE')}"></span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

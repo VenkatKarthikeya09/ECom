@@ -4,6 +4,12 @@ import com.example.ecom.model.Category;
 import com.example.ecom.model.Product;
 import com.example.ecom.model.Role;
 import com.example.ecom.model.User;
+import com.example.ecom.model.Orders;
+import com.example.ecom.model.Payment;
+import com.example.ecom.model.Address;
+import com.example.ecom.repository.AddressRepository;
+import com.example.ecom.repository.OrdersRepository;
+import com.example.ecom.repository.PaymentRepository;
 import com.example.ecom.repository.UserRepository;
 import com.example.ecom.service.CategoryService;
 import com.example.ecom.service.ProductService;
@@ -27,6 +33,9 @@ public class AdminController {
     @Autowired private CategoryService categoryService;
     @Autowired private UserRepository userRepository;
     @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    @Autowired private OrdersRepository ordersRepository;
+    @Autowired private PaymentRepository paymentRepository;
+    @Autowired private AddressRepository addressRepository;
 
     @GetMapping
     public String adminIndex(Model model) {
@@ -201,5 +210,81 @@ public class AdminController {
         userRepository.deleteById(id);
         ra.addAttribute("success", "User deleted");
         return "redirect:/admin/users";
+    }
+
+    // ORDERS
+    @GetMapping("/orders")
+    public String listOrders(Model model, @RequestParam(value = "success", required = false) String success,
+                             @RequestParam(value = "error", required = false) String error) {
+        model.addAttribute("orders", ordersRepository.findAll());
+        model.addAttribute("success", success);
+        model.addAttribute("error", error);
+        return "admin/orders";
+    }
+
+    @PostMapping("/orders/{id}/status")
+    public String updateOrderStatus(@PathVariable Integer id, @RequestParam Orders.Status status, RedirectAttributes ra) {
+        Optional<Orders> opt = ordersRepository.findById(id);
+        if (opt.isPresent()) {
+            Orders o = opt.get();
+            o.setStatus(status);
+            ordersRepository.save(o);
+            ra.addAttribute("success", "Order status updated");
+        } else {
+            ra.addAttribute("error", "Order not found");
+        }
+        return "redirect:/admin/orders";
+    }
+
+    // PAYMENTS
+    @GetMapping("/payments")
+    public String listPayments(Model model, @RequestParam(value = "success", required = false) String success,
+                               @RequestParam(value = "error", required = false) String error) {
+        model.addAttribute("payments", paymentRepository.findAll());
+        model.addAttribute("success", success);
+        model.addAttribute("error", error);
+        return "admin/payments";
+    }
+
+    @PostMapping("/payments/{id}/status")
+    public String updatePaymentStatus(@PathVariable Integer id, @RequestParam Payment.Status status, RedirectAttributes ra) {
+        Optional<Payment> opt = paymentRepository.findById(id);
+        if (opt.isPresent()) {
+            Payment p = opt.get();
+            p.setStatus(status);
+            paymentRepository.save(p);
+            ra.addAttribute("success", "Payment status updated");
+        } else {
+            ra.addAttribute("error", "Payment not found");
+        }
+        return "redirect:/admin/payments";
+    }
+
+    // ADDRESSES
+    @GetMapping("/addresses")
+    public String listAddresses(Model model, @RequestParam(value = "success", required = false) String success,
+                                @RequestParam(value = "error", required = false) String error) {
+        model.addAttribute("addresses", addressRepository.findAll());
+        model.addAttribute("success", success);
+        model.addAttribute("error", error);
+        return "admin/addresses";
+    }
+
+    @PostMapping("/addresses/{id}/delete")
+    public String adminDeleteAddress(@PathVariable Integer id, RedirectAttributes ra) {
+        Optional<Address> opt = addressRepository.findById(id);
+        if (opt.isPresent()) {
+            Address a = opt.get();
+            long used = ordersRepository.countByAddress(a);
+            if (used > 0) {
+                ra.addAttribute("error", "Cannot delete: address linked to existing orders");
+            } else {
+                addressRepository.delete(a);
+                ra.addAttribute("success", "Address deleted");
+            }
+        } else {
+            ra.addAttribute("error", "Address not found");
+        }
+        return "redirect:/admin/addresses";
     }
 } 

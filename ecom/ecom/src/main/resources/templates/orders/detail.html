@@ -5,11 +5,12 @@
     <title>Order Details</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body>
 <div th:replace="fragments/navbar :: navbar"></div>
 <main class="container my-5 pt-5">
-    <h3 class="mb-3">Order #<span th:text="${order.orderId}"></span></h3>
+    <h3 class="mb-3">Order <span th:text="${order.orderRef != null ? order.orderRef : '#' + order.orderId}"></span></h3>
     <div class="row g-3">
         <div class="col-md-6">
             <div class="card">
@@ -27,13 +28,49 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header">Summary</div>
                 <div class="card-body">
                     <div>Status: <span class="badge bg-secondary" th:text="${order.status}"></span></div>
-                    <div class="mt-2">Subtotal: ₹ <span th:text="${#numbers.formatDecimal(order.subtotal, 1, 'POINT', 2, 'NONE')}"></span></div>
-                    <div>Shipping: ₹ <span th:text="${#numbers.formatDecimal(order.shipping, 1, 'POINT', 2, 'NONE')}"></span></div>
-                    <div class="fw-bold">Total: ₹ <span th:text="${#numbers.formatDecimal(order.total, 1, 'POINT', 2, 'NONE')}"></span></div>
+                    <div class="mt-2">Subtotal: ₹ <span th:text="${#numbers.formatDecimal(order.subtotal, 1, 'NONE', 2, 'POINT')}"></span></div>
+                    <div>Shipping: ₹ <span th:text="${#numbers.formatDecimal(order.shipping, 1, 'NONE', 2, 'POINT')}"></span></div>
+                    <div class="fw-bold">Total: ₹ <span th:text="${#numbers.formatDecimal(order.total, 1, 'NONE', 2, 'POINT')}"></span></div>
+                    <div class="mt-2 text-muted">Estimated delivery by <span th:text="${etaDate}"></span></div>
+                </div>
+            </div>
+            <div class="card" th:if="${payment}">
+                <div class="card-header">Payment details</div>
+                <div class="card-body">
+                    <div>Method: <span th:text="${payment.method}"></span></div>
+                    <div>Status: <span class="badge" th:classappend="${payment.status.name() == 'PAID'} ? 'bg-success' : (${payment.status.name() == 'FAILED'} ? 'bg-danger' : 'bg-secondary')" th:text="${payment.status}"></span></div>
+                    <div th:if="${payment.method.name() == 'CARD'}">
+                        <div>Card holder: <span th:text="${payment.cardHolder}"></span></div>
+                        <div>Card: **** **** **** <span th:text="${payment.cardLast4}"></span> (<span th:text="${payment.cardExpMonth}"></span>/<span th:text="${payment.cardExpYear}"></span>)</div>
+                    </div>
+                    <div th:if="${payment.method.name() == 'UPI_QR'}">
+                        <div>UPI ID: <span th:text="${payment.upiId}"></span></div>
+                    </div>
+                    <div th:if="${payment.referenceNumber}">Reference: <span th:text="${payment.referenceNumber}"></span></div>
+                    <div th:if="${payment.bankName}">Bank/Provider: <span th:text="${payment.bankName}"></span></div>
+                    <div th:if="${payment.payerName}">Payer name: <span th:text="${payment.payerName}"></span></div>
+                    <div>Amount: ₹ <span th:text="${#numbers.formatDecimal(payment.amount, 1, 'NONE', 2, 'POINT')}"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">Delivery timeline</div>
+        <div class="card-body">
+            <div class="list-group">
+                <div class="list-group-item d-flex justify-content-between align-items-center" th:each="t : ${timeline}">
+                    <div>
+                        <div class="fw-semibold" th:text="${t['label']}"></div>
+                        <small class="text-muted" th:if="${t['status'] == 'COMPLETED'}">Actual: <span th:text="${t['actual']}"></span></small>
+                        <small class="text-muted" th:if="${t['status'] == 'CURRENT'}">In progress • Expected: <span th:text="${t['expected']}"></span></small>
+                        <small class="text-muted" th:if="${t['status'] == 'UPCOMING'}">Expected: <span th:text="${t['expected']}"></span></small>
+                    </div>
+                    <span class="badge" th:classappend="${t['status'] == 'COMPLETED'} ? 'bg-success' : (${t['status'] == 'CURRENT'} ? 'bg-warning text-dark' : 'bg-secondary')" th:text="${t['status']}"></span>
                 </div>
             </div>
         </div>
@@ -55,9 +92,9 @@
             <tr th:each="it : ${items}">
                 <td><img th:src="@{'/img-proxy'(url=${it.imageUrl})}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;"></td>
                 <td th:text="${it.productName}"></td>
-                <td>₹ <span th:text="${#numbers.formatDecimal(it.productPrice, 1, 'POINT', 2, 'NONE')}"></span></td>
+                <td>₹ <span th:text="${#numbers.formatDecimal(it.productPrice, 1, 'NONE', 2, 'POINT')}"></span></td>
                 <td th:text="${it.quantity}"></td>
-                <td>₹ <span th:text="${#numbers.formatDecimal(it.productPrice * it.quantity, 1, 'POINT', 2, 'NONE')}"></span></td>
+                <td>₹ <span th:text="${#numbers.formatDecimal(it.productPrice * it.quantity, 1, 'NONE', 2, 'POINT')}"></span></td>
             </tr>
             </tbody>
         </table>

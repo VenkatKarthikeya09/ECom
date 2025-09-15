@@ -12,8 +12,9 @@
     <div class="card">
         <div class="card-body">
             <h3 class="card-title">Thank you!</h3>
-            <p th:if="${method == T(com.example.ecom.model.CheckoutSession.PaymentMethod).COD}">Your order has been confirmed. Cash on delivery selected.</p>
-            <p th:if="${method != T(com.example.ecom.model.CheckoutSession.PaymentMethod).COD}">Your payment details have been submitted for verification. We will notify you once verified.</p>
+            <p class="mb-1" th:if="${method == T(com.example.ecom.model.CheckoutSession.PaymentMethod).COD}">Your order is received and we are on it. It will be delivered within <strong th:text="${etaDays}"></strong> days (by <strong th:text="${etaDate}"></strong>).</p>
+            <p class="mb-1" th:if="${method != T(com.example.ecom.model.CheckoutSession.PaymentMethod).COD}">Order placed successfully. Your order is received and we are on it. It will be delivered within <strong th:text="${etaDays}"></strong> days (by <strong th:text="${etaDate}"></strong>).</p>
+            <div class="mt-2" th:if="${orderRef}">Tracking reference: <span class="fw-semibold" th:text="${orderRef}"></span></div>
             <hr>
             <h5>Shipping to</h5>
             <div th:if="${address}">

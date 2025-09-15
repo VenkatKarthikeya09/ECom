@@ -44,6 +44,10 @@ public class Orders {
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderItem> items = new ArrayList<>();
 
+	// Computed reference for tracking (not persisted)
+	@Transient
+	private String orderRef;
+
 	// getters/setters
 	public Integer getOrderId() { return orderId; }
 	public void setOrderId(Integer orderId) { this.orderId = orderId; }
@@ -65,4 +69,32 @@ public class Orders {
 	public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 	public List<OrderItem> getItems() { return items; }
 	public void setItems(List<OrderItem> items) { this.items = items; }
+
+	@PrePersist
+	public void prePersist() {
+		this.createdAt = Instant.now();
+		this.updatedAt = this.createdAt;
+	}
+
+	@PreUpdate
+	public void preUpdate() {
+		this.updatedAt = Instant.now();
+	}
+
+	public String getOrderRef() {
+		if (orderRef == null) {
+			// Build deterministic human-friendly ref from id and timestamp
+			String prefix = "ORD-";
+			String letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+			int idPart = (orderId != null ? orderId : 0);
+			long epochPart = (createdAt != null ? createdAt.getEpochSecond() : 0L);
+			int hash = Math.abs((int)(idPart * 1315423911L ^ epochPart));
+			char a = letters.charAt(hash % letters.length());
+			char b = letters.charAt((hash / 7) % letters.length());
+			char c = letters.charAt((hash / 13) % letters.length());
+			long num = Math.abs((epochPart + idPart * 10007L) % 1_000_000L);
+			orderRef = prefix + a + b + c + "-" + String.format("%06d", num);
+		}
+		return orderRef;
+	}
 } 

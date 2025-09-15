@@ -22,25 +22,29 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="ci : ${items}">
-                <td><img th:src="@{'/img-proxy'(url=${ci.product.imageUrl})}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;"></td>
-                <td th:text="${ci.product.name}"></td>
-                <td>₹ <span th:text="${#numbers.formatDecimal(ci.product.price, 1, 'POINT', 2, 'NONE')}"></span></td>
+            <tr th:if="${#lists.isEmpty(reviewItems)}">
+                <td colspan="5" class="text-center text-muted">No items to review.</td>
+            </tr>
+            <tr th:each="ri : ${reviewItems}">
+                <td><img th:src="@{'/img-proxy'(url=${ri.imageUrl})}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;"></td>
+                <td th:text="${ri.name}"></td>
+                <td>₹ <span th:text="${#numbers.formatDecimal(ri.price, 1, 'NONE', 2, 'POINT')}"></span></td>
                 <td>
-                    <form method="post" action="/checkout/update" class="d-flex gap-2">
-                        <input type="hidden" name="productId" th:value="${ci.product.productId}">
-                        <input class="form-control" type="number" name="quantity" th:value="${ci.quantity}" min="0" style="width:90px;">
+                    <form method="post" action="/checkout/update" class="d-flex gap-2" th:if="${ri.productId != null}">
+                        <input type="hidden" name="productId" th:value="${ri.productId}">
+                        <input class="form-control" type="number" name="quantity" th:value="${ri.quantity}" min="0" style="width:90px;">
                         <button class="btn btn-outline-primary btn-sm">Update</button>
                     </form>
+                    <span th:if="${ri.productId == null}" th:text="${ri.quantity}"></span>
                 </td>
-                <td>₹ <span th:text="${#numbers.formatDecimal(ci.product.price * ci.quantity, 1, 'POINT', 2, 'NONE')}"></span></td>
+                <td>₹ <span th:text="${#numbers.formatDecimal(ri.price * ri.quantity, 1, 'NONE', 2, 'POINT')}"></span></td>
             </tr>
             </tbody>
         </table>
     </div>
     <div class="d-flex justify-content-between align-items-center">
         <a class="btn btn-outline-secondary" href="/checkout/address">Back to address</a>
-        <div class="fs-5">Total: ₹ <span th:text="${#numbers.formatDecimal(totalPrice, 1, 'POINT', 2, 'NONE')}"></span></div>
+        <div class="fs-5">Total: ₹ <span th:text="${#numbers.formatDecimal(totalPrice, 1, 'NONE', 2, 'POINT')}"></span></div>
         <a class="btn btn-gold" href="/checkout/payment">Continue to payment</a>
     </div>
 </main>

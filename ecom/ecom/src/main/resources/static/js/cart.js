@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         checkoutBtn.addEventListener('click', () => {
             const cart = JSON.parse(localStorage.getItem('cart')) || {};
             if (Object.keys(cart).length > 0) {
-                window.location.href = 'checkout.html';
+                window.location.href = '/checkout';
             } else {
                 alert('Your cart is empty. Please add items before proceeding to checkout.');
             }

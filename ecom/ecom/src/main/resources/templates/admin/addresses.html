@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin | Addresses</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div th:replace="fragments/navbar :: navbar"></div>
+<main class="container my-5 pt-5">
+  <h3 class="mb-3">Addresses</h3>
+  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+  <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>User</th>
+        <th>Label</th>
+        <th>Name</th>
+        <th>Line 1</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Pincode</th>
+        <th>Action</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="a : ${addresses}">
+        <td th:text="${a.addressId}"></td>
+        <td th:text="${a.user != null ? a.user.username : '-'}"></td>
+        <td th:text="${a.label}"></td>
+        <td th:text="${a.fullName}"></td>
+        <td th:text="${a.addressLine1}"></td>
+        <td th:text="${a.city}"></td>
+        <td th:text="${a.state}"></td>
+        <td th:text="${a.postalCode}"></td>
+        <td>
+          <form method="post" th:action="@{'/admin/addresses/' + ${a.addressId} + '/delete'}" onsubmit="return confirm('Delete this address?');">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

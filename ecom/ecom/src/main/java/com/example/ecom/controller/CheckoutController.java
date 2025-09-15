@@ -12,9 +12,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Random;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/checkout")
@@ -38,6 +43,7 @@ public class CheckoutController {
     @GetMapping("/address")
     public String address(Model model, Authentication auth) {
         model.addAttribute("address", checkoutSession.getAddress());
+        model.addAttribute("serverCartSize", cartService.getCartSize());
         if (auth != null && auth.isAuthenticated()) {
             userRepository.findByUsername(auth.getName()).ifPresent(u -> {
                 model.addAttribute("userEmail", u.getEmail());
@@ -75,10 +81,16 @@ public class CheckoutController {
             entity.setPostalCode(addr.getPostalCode());
             entity.setCountry(addr.getCountry());
             entity.setEmail(addr.getEmail());
+            entity.setLabel((addr.getLabel() != null && !addr.getLabel().isBlank()) ? addr.getLabel() : "Home");
             if (auth != null && auth.isAuthenticated()) {
                 userRepository.findByUsername(auth.getName()).ifPresent(entity::setUser);
             }
             usedAddress = addressRepository.save(entity);
+        }
+
+        // Keep session address in sync when choosing a saved address
+        if (selectedAddressId != null) {
+            checkoutSession.copyFromEntityAddress(usedAddress);
         }
 
         List<CartItem> items = new ArrayList<>(cartService.getCart().values());
@@ -92,6 +104,8 @@ public class CheckoutController {
         order.setShipping(0.0);
         order.setTotal(subtotal);
         currentOrder = ordersRepository.save(order);
+        // store order id in session for continuity
+        checkoutSession.setCurrentOrderId(currentOrder.getOrderId());
         for (CartItem ci : items) {
             OrderItem oi = new OrderItem();
             oi.setOrder(currentOrder);
@@ -107,9 +121,34 @@ public class CheckoutController {
 
     @GetMapping("/review")
     public String review(Model model) {
-        List<CartItem> items = new ArrayList<>(cartService.getCart().values());
-        model.addAttribute("items", items);
-        model.addAttribute("totalPrice", items.stream().mapToDouble(i -> i.getProduct().getPrice() * i.getQuantity()).sum());
+        // Restore current order from session if needed
+        if ((currentOrder == null || currentOrder.getOrderId() == null) && checkoutSession.getCurrentOrderId() != null) {
+            currentOrder = ordersRepository.findById(checkoutSession.getCurrentOrderId()).orElse(null);
+        }
+        // Prefer session cart items; if empty, fall back to order items
+        List<CartItem> cartItems = new ArrayList<>(cartService.getCart().values());
+        List<CheckoutSession.ReviewItem> reviewItems = new ArrayList<>();
+        double total;
+        if (!cartItems.isEmpty()) {
+            reviewItems = checkoutSession.buildReviewItems(cartItems);
+            total = cartItems.stream().mapToDouble(i -> i.getProduct().getPrice() * i.getQuantity()).sum();
+        } else if (currentOrder != null) {
+            List<OrderItem> orderItems = orderItemRepository.findByOrder(currentOrder);
+            for (OrderItem it : orderItems) {
+                CheckoutSession.ReviewItem ri = new CheckoutSession.ReviewItem();
+                ri.setProductId(it.getProduct() != null ? it.getProduct().getProductId() : null);
+                ri.setName(it.getProductName());
+                ri.setPrice(it.getProductPrice());
+                ri.setQuantity(it.getQuantity());
+                ri.setImageUrl(it.getImageUrl());
+                reviewItems.add(ri);
+            }
+            total = orderItems.stream().mapToDouble(i -> i.getProductPrice() * i.getQuantity()).sum();
+        } else {
+            total = 0.0;
+        }
+        model.addAttribute("reviewItems", reviewItems);
+        model.addAttribute("totalPrice", total);
         return "checkout/review";
     }
 
@@ -141,8 +180,22 @@ public class CheckoutController {
 
     @GetMapping("/payment")
     public String payment(Model model) {
+        if ((currentOrder == null || currentOrder.getOrderId() == null) && checkoutSession.getCurrentOrderId() != null) {
+            currentOrder = ordersRepository.findById(checkoutSession.getCurrentOrderId()).orElse(null);
+        }
+        double orderTotal = 0.0;
+        if (currentOrder != null) {
+            orderTotal = currentOrder.getTotal();
+        } else {
+            // fallback to cart sum
+            orderTotal = cartService.getCart().values().stream()
+                    .mapToDouble(i -> i.getProduct().getPrice() * i.getQuantity())
+                    .sum();
+        }
         model.addAttribute("method", checkoutSession.getPaymentMethod());
         model.addAttribute("details", checkoutSession.getPaymentDetails());
+        model.addAttribute("verification", checkoutSession.getVerification());
+        model.addAttribute("orderTotal", orderTotal);
         return "checkout/payment";
     }
 
@@ -260,10 +313,141 @@ public class CheckoutController {
         return "redirect:/checkout/confirmed";
     }
 
+    // New consolidated payment endpoint (no intermediate redirects)
+    @PostMapping("/pay")
+    public String pay(@RequestParam("method") CheckoutSession.PaymentMethod method,
+                      @RequestParam(value = "cardHolder", required = false) String cardHolder,
+                      @RequestParam(value = "cardNumber", required = false) String cardNumber,
+                      @RequestParam(value = "expiryMonth", required = false) Integer expiryMonth,
+                      @RequestParam(value = "expiryYear", required = false) Integer expiryYear,
+                      @RequestParam(value = "upiLocal", required = false) String upiLocal,
+                      @RequestParam(value = "upiSuffix", required = false) String upiSuffix,
+                      @RequestParam(value = "referenceNumber", required = false) String referenceNumber,
+                      @RequestParam(value = "bankName", required = false) String bankName,
+                      @RequestParam(value = "payerName", required = false) String payerName,
+                      Model model) {
+        checkoutSession.setPaymentMethod(method);
+        if ((currentOrder == null || currentOrder.getOrderId() == null) && checkoutSession.getCurrentOrderId() != null) {
+            currentOrder = ordersRepository.findById(checkoutSession.getCurrentOrderId()).orElse(null);
+        }
+        if (currentOrder != null) {
+            Payment payment = paymentRepository.findByOrder(currentOrder).orElseGet(() -> {
+                Payment p = new Payment();
+                p.setOrder(currentOrder);
+                p.setAmount(currentOrder.getTotal());
+                return p;
+            });
+            if (method == CheckoutSession.PaymentMethod.CARD) {
+                payment.setMethod(Payment.Method.CARD);
+                payment.setCardHolder(cardHolder);
+                if (cardNumber != null && cardNumber.length() >= 4) {
+                    payment.setCardLast4(cardNumber.substring(cardNumber.length() - 4));
+                }
+                payment.setCardExpMonth(expiryMonth);
+                payment.setCardExpYear(expiryYear);
+                payment.setStatus(Payment.Status.PAID);
+                currentOrder.setStatus(Orders.Status.PAID);
+            } else if (method == CheckoutSession.PaymentMethod.UPI_QR) {
+                payment.setMethod(Payment.Method.UPI_QR);
+                String upi = (upiLocal != null ? upiLocal.trim() : "") + (upiSuffix != null ? upiSuffix : "");
+                payment.setUpiId(upi);
+                payment.setStatus(Payment.Status.PAID);
+                currentOrder.setStatus(Orders.Status.PAID);
+            } else { // COD
+                payment.setMethod(Payment.Method.COD);
+                payment.setStatus(Payment.Status.PAID);
+                currentOrder.setStatus(Orders.Status.COD_CONFIRMED);
+            }
+            // Verification/proof (if provided)
+            if (referenceNumber != null && !referenceNumber.isBlank()) payment.setReferenceNumber(referenceNumber);
+            if (bankName != null && !bankName.isBlank()) payment.setBankName(bankName);
+            if (payerName != null && !payerName.isBlank()) payment.setPayerName(payerName);
+            paymentRepository.save(payment);
+            ordersRepository.save(currentOrder);
+        }
+        cartService.getCart().clear();
+        // Compute ETA (1-5 days)
+        int etaDays = new Random().nextInt(5) + 1;
+        LocalDate etaDate = LocalDate.now().plusDays(etaDays);
+        model.addAttribute("address", checkoutSession.getAddress());
+        model.addAttribute("method", checkoutSession.getPaymentMethod());
+        model.addAttribute("etaDays", etaDays);
+        model.addAttribute("etaDate", etaDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        model.addAttribute("placed", true);
+        // Also show orderRef for tracking
+        model.addAttribute("orderRef", currentOrder != null ? currentOrder.getOrderRef() : null);
+        return "checkout/confirmed";
+    }
+
     @GetMapping("/confirmed")
     public String confirmed(Model model) {
         model.addAttribute("address", checkoutSession.getAddress());
         model.addAttribute("method", checkoutSession.getPaymentMethod());
+        // Provide ETA on confirmation as well
+        int etaDays = new Random().nextInt(5) + 1;
+        LocalDate etaDate = LocalDate.now().plusDays(etaDays);
+        model.addAttribute("etaDays", etaDays);
+        model.addAttribute("etaDate", etaDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        if ((currentOrder == null || currentOrder.getOrderId() == null) && checkoutSession.getCurrentOrderId() != null) {
+            currentOrder = ordersRepository.findById(checkoutSession.getCurrentOrderId()).orElse(null);
+        }
+        model.addAttribute("orderRef", currentOrder != null ? currentOrder.getOrderRef() : null);
         return "checkout/confirmed";
+    }
+
+    @PostMapping("/address/{id}/delete")
+    public String deleteAddress(@PathVariable Integer id, Authentication auth, RedirectAttributes ra) {
+        if (auth != null && auth.isAuthenticated()) {
+            Optional<User> user = userRepository.findByUsername(auth.getName());
+            Optional<Address> addr = addressRepository.findById(id);
+            if (user.isPresent() && addr.isPresent() && addr.get().getUser() != null && addr.get().getUser().getUserId().equals(user.get().getUserId())) {
+                long used = ordersRepository.countByAddress(addr.get());
+                if (used > 0) {
+                    ra.addAttribute("error", "Cannot delete: address linked to existing orders");
+                    return "redirect:/checkout/address";
+                }
+                addressRepository.deleteById(id);
+                ra.addAttribute("success", "Address deleted");
+            }
+        }
+        return "redirect:/checkout/address";
+    }
+
+    @PostMapping("/address/{id}/edit")
+    public String editAddress(@PathVariable Integer id,
+                              @RequestParam String fullName,
+                              @RequestParam String phone,
+                              @RequestParam String addressLine1,
+                              @RequestParam(required = false) String addressLine2,
+                              @RequestParam(required = false) String landmark,
+                              @RequestParam String area,
+                              @RequestParam String city,
+                              @RequestParam String state,
+                              @RequestParam String postalCode,
+                              @RequestParam String country,
+                              @RequestParam(required = false) String label,
+                              Authentication auth,
+                              RedirectAttributes ra) {
+        if (auth != null && auth.isAuthenticated()) {
+            Optional<User> user = userRepository.findByUsername(auth.getName());
+            Optional<Address> opt = addressRepository.findById(id);
+            if (user.isPresent() && opt.isPresent() && opt.get().getUser() != null && opt.get().getUser().getUserId().equals(user.get().getUserId())) {
+                Address a = opt.get();
+                a.setFullName(fullName);
+                a.setPhone(phone);
+                a.setAddressLine1(addressLine1);
+                a.setAddressLine2(addressLine2);
+                a.setLandmark(landmark);
+                a.setArea(area);
+                a.setCity(city);
+                a.setState(state);
+                a.setPostalCode(postalCode);
+                a.setCountry(country);
+                a.setLabel((label != null && !label.isBlank()) ? label : a.getLabel());
+                addressRepository.save(a);
+                ra.addAttribute("success", "Address updated");
+            }
+        }
+        return "redirect:/checkout/address";
     }
 } 

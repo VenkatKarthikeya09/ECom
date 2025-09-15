@@ -23,6 +23,7 @@ public class CheckoutSession {
         private String email;
         private String phone;
         private boolean emailSameAsAccount;
+        private String label;
 
         public String getFullName() { return fullName; }
         public void setFullName(String fullName) { this.fullName = fullName; }
@@ -48,6 +49,8 @@ public class CheckoutSession {
         public void setPhone(String phone) { this.phone = phone; }
         public boolean isEmailSameAsAccount() { return emailSameAsAccount; }
         public void setEmailSameAsAccount(boolean emailSameAsAccount) { this.emailSameAsAccount = emailSameAsAccount; }
+        public String getLabel() { return label; }
+        public void setLabel(String label) { this.label = label; }
     }
 
     public enum PaymentMethod { CARD, UPI_QR, COD }
@@ -100,6 +103,7 @@ public class CheckoutSession {
     private PaymentMethod paymentMethod;
     private PaymentDetails paymentDetails = new PaymentDetails();
     private PaymentVerification verification = new PaymentVerification();
+    private Integer currentOrderId;
 
     public Address getAddress() { return address; }
     public void setAddress(Address address) { this.address = address; }
@@ -109,6 +113,8 @@ public class CheckoutSession {
     public void setPaymentDetails(PaymentDetails paymentDetails) { this.paymentDetails = paymentDetails; }
     public PaymentVerification getVerification() { return verification; }
     public void setVerification(PaymentVerification verification) { this.verification = verification; }
+    public Integer getCurrentOrderId() { return currentOrderId; }
+    public void setCurrentOrderId(Integer currentOrderId) { this.currentOrderId = currentOrderId; }
 
     public static class ReviewItem {
         private Long productId;
@@ -140,5 +146,21 @@ public class CheckoutSession {
             list.add(ri);
         }
         return list;
+    }
+
+    public void copyFromEntityAddress(com.example.ecom.model.Address entity) {
+        if (entity == null) return;
+        this.address.setFullName(entity.getFullName());
+        this.address.setAddressLine1(entity.getAddressLine1());
+        this.address.setAddressLine2(entity.getAddressLine2());
+        this.address.setLandmark(entity.getLandmark());
+        this.address.setArea(entity.getArea());
+        this.address.setCity(entity.getCity());
+        this.address.setState(entity.getState());
+        this.address.setPostalCode(entity.getPostalCode());
+        this.address.setCountry(entity.getCountry());
+        this.address.setEmail(entity.getEmail());
+        this.address.setPhone(entity.getPhone());
+        this.address.setLabel(entity.getLabel());
     }
 } 

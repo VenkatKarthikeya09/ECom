@@ -18,6 +18,8 @@
         </form>
     </div>
 
+    <div th:if="${param.success}" class="alert alert-success" th:text="${param.success}"></div>
+
     <div th:if="${#lists.isEmpty(orders)}" class="alert alert-info">No orders yet.</div>
 
     <div class="row g-3" th:if="${!#lists.isEmpty(orders)}">
@@ -30,7 +32,7 @@
                         </div>
                         <div class="mt-1">
                             <span th:if="${o.status == T(com.example.ecom.model.Orders.Status).PAID or o.status == T(com.example.ecom.model.Orders.Status).COD_CONFIRMED}" class="badge bg-success">Paid</span>
-                            <span th:if="${o.status == T(com.example.ecom.model.Orders.Status).CANCELLED}" class="badge bg-danger">Payment failed</span>
+                            <span th:if="${o.status == T(com.example.ecom.model.Orders.Status).CANCELLED}" class="badge bg-danger">Cancelled</span>
                             <span th:if="${o.status == T(com.example.ecom.model.Orders.Status).CREATED}" class="badge bg-warning text-dark">Not paid</span>
                             <small class="text-muted ms-2" th:text="${#temporals.format(o.createdAt, 'yyyy-MM-dd HH:mm')}"></small>
                         </div>

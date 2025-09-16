@@ -12,7 +12,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -69,6 +71,30 @@ public class OrdersController {
 		// Progressive timeline and ETA
 		addProgressiveTimeline(model, order);
 		return "orders/detail";
+	}
+
+	// Allow customer to cancel own order
+	@PostMapping("/{id}/cancel")
+	public String cancel(@PathVariable Integer id, Authentication auth, RedirectAttributes ra) {
+		if (auth == null || !auth.isAuthenticated()) return "redirect:/login";
+		Optional<User> user = userRepository.findByUsername(auth.getName());
+		Optional<Orders> opt = ordersRepository.findById(id);
+		if (user.isPresent() && opt.isPresent()) {
+			Orders o = opt.get();
+			// basic ownership check
+			if (o.getUser() != null && o.getUser().getUserId().equals(user.get().getUserId())) {
+				o.setStatus(Orders.Status.CANCELLED);
+				ordersRepository.save(o);
+				paymentRepository.findByOrder(o).ifPresent(p -> {
+					if (p.getStatus() == Payment.Status.PAID || p.getStatus() == Payment.Status.SUBMITTED) {
+						p.setStatus(Payment.Status.FAILED);
+						paymentRepository.save(p);
+					}
+				});
+				ra.addAttribute("success", "Order cancelled. Refund (if applicable) will be initiated in 3-5 days.");
+			}
+		}
+		return "redirect:/orders";
 	}
 
 	// New: track by order reference (computed transient)

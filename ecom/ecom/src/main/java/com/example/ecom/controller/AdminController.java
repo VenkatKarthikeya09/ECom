@@ -11,10 +11,14 @@ import com.example.ecom.repository.AddressRepository;
 import com.example.ecom.repository.OrdersRepository;
 import com.example.ecom.repository.PaymentRepository;
 import com.example.ecom.repository.UserRepository;
+import com.example.ecom.repository.OrderItemRepository;
+import com.example.ecom.service.AdminNotificationService;
 import com.example.ecom.service.CategoryService;
 import com.example.ecom.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +26,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -36,6 +41,8 @@ public class AdminController {
     @Autowired private OrdersRepository ordersRepository;
     @Autowired private PaymentRepository paymentRepository;
     @Autowired private AddressRepository addressRepository;
+    @Autowired private AdminNotificationService notificationService;
+    @Autowired private OrderItemRepository orderItemRepository;
 
     @GetMapping
     public String adminIndex(Model model) {
@@ -45,14 +52,38 @@ public class AdminController {
         List<User> latestUsers = userRepository.findAll().stream()
                 .sorted(Comparator.comparing(User::getUserId).reversed())
                 .limit(5)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
         List<Product> latestProducts = productService.getAllProducts().stream()
                 .sorted(Comparator.comparing(Product::getProductId).reversed())
                 .limit(5)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
         model.addAttribute("latestUsers", latestUsers);
         model.addAttribute("latestProducts", latestProducts);
+        model.addAttribute("notifications", notificationService.all());
+        java.util.List<com.example.ecom.service.AdminNotificationService.Notification> unread = notificationService.all().stream()
+                .filter(n -> !n.read)
+                .collect(java.util.stream.Collectors.toList());
+        model.addAttribute("unreadNotifications", unread);
         return "admin/index";
+    }
+
+    @GetMapping("/notifications")
+    @ResponseBody
+    public List<AdminNotificationService.Notification> notificationsApi(@RequestParam(value = "limit", defaultValue = "50") int limit) {
+        return notificationService.latest(limit);
+    }
+
+    @PostMapping("/notifications/{id}/read")
+    @ResponseBody
+    public String markNotificationRead(@PathVariable("id") long id) {
+        notificationService.markRead(id);
+        return "OK";
+    }
+
+    @GetMapping("/notifications/all")
+    public String notificationsPage(Model model) {
+        model.addAttribute("notifications", notificationService.all());
+        return "admin/notifications";
     }
 
     // PRODUCTS
@@ -60,14 +91,63 @@ public class AdminController {
     public String listProducts(Model model,
                                @RequestParam(value = "page", defaultValue = "0") int page,
                                @RequestParam(value = "size", defaultValue = "25") int size,
+                               @RequestParam(value = "q", required = false) String q,
+                               @RequestParam(value = "categoryId", required = false) Integer categoryId,
+                               @RequestParam(value = "minPrice", required = false) Double minPrice,
+                               @RequestParam(value = "maxPrice", required = false) Double maxPrice,
+                               @RequestParam(value = "minStock", required = false) Integer minStock,
+                               @RequestParam(value = "maxStock", required = false) Integer maxStock,
                                @RequestParam(value = "success", required = false) String success,
                                @RequestParam(value = "error", required = false) String error) {
-        Page<Product> productPage = productService.getProductsPage(page, size);
-        model.addAttribute("products", productPage.getContent());
-        model.addAttribute("page", productPage);
+        // Start with all products and filter, then paginate the filtered result
+        java.util.List<Product> all = productService.getAllProducts();
+        java.util.List<Product> filtered = all;
+        if (q != null && !q.isBlank()) {
+            String query = q.trim().toLowerCase();
+            // Numeric search: if q is a number, match price or stock as well
+            Double qNum = null; Integer qInt = null;
+            try { qNum = Double.parseDouble(query); } catch (Exception ignored) {}
+            try { qInt = Integer.parseInt(query); } catch (Exception ignored) {}
+            Double finalQNum = qNum; Integer finalQInt = qInt;
+            filtered = filtered.stream().filter(p ->
+                (p.getName() != null && p.getName().toLowerCase().contains(query)) ||
+                (p.getDescription() != null && p.getDescription().toLowerCase().contains(query)) ||
+                (finalQNum != null && Double.compare(p.getPrice(), finalQNum) == 0) ||
+                (finalQInt != null && p.getStockQuantity() == finalQInt)
+            ).collect(java.util.stream.Collectors.toList());
+        }
+        if (categoryId != null) {
+            filtered = filtered.stream().filter(p -> p.getCategory() != null && p.getCategory().getCategoryId().equals(categoryId)).collect(java.util.stream.Collectors.toList());
+        }
+        if (minPrice != null) {
+            filtered = filtered.stream().filter(p -> p.getPrice() >= minPrice).collect(java.util.stream.Collectors.toList());
+        }
+        if (maxPrice != null) {
+            filtered = filtered.stream().filter(p -> p.getPrice() <= maxPrice).collect(java.util.stream.Collectors.toList());
+        }
+        if (minStock != null) {
+            filtered = filtered.stream().filter(p -> p.getStockQuantity() >= minStock).collect(java.util.stream.Collectors.toList());
+        }
+        if (maxStock != null) {
+            filtered = filtered.stream().filter(p -> p.getStockQuantity() <= maxStock).collect(java.util.stream.Collectors.toList());
+        }
+
+        int from = Math.max(0, Math.min(page * size, filtered.size()));
+        int to = Math.max(from, Math.min(from + size, filtered.size()));
+        java.util.List<Product> pageContent = filtered.subList(from, to);
+        Page<Product> pageObj = new PageImpl<>(pageContent, PageRequest.of(page, size), filtered.size());
+
+        model.addAttribute("products", pageContent);
+        model.addAttribute("page", pageObj);
         model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("success", success);
         model.addAttribute("error", error);
+        model.addAttribute("q", q);
+        model.addAttribute("categoryId", categoryId);
+        model.addAttribute("minPrice", minPrice);
+        model.addAttribute("maxPrice", maxPrice);
+        model.addAttribute("minStock", minStock);
+        model.addAttribute("maxStock", maxStock);
         return "admin/products";
     }
 
@@ -99,10 +179,26 @@ public class AdminController {
     // CATEGORIES
     @GetMapping("/categories")
     public String listCategories(Model model, @RequestParam(value = "success", required = false) String success,
-                                 @RequestParam(value = "error", required = false) String error) {
-        model.addAttribute("categories", categoryService.getAllCategories());
+                                 @RequestParam(value = "error", required = false) String error,
+                                 @RequestParam(value = "sort", required = false, defaultValue = "nameAsc") String sort) {
+        List<Category> cats = categoryService.getAllCategories();
+        switch (sort) {
+            case "nameDesc":
+                cats = cats.stream().sorted(Comparator.comparing(Category::getName, String.CASE_INSENSITIVE_ORDER).reversed()).collect(Collectors.toList());
+                break;
+            case "oldest":
+                cats = cats.stream().sorted(Comparator.comparing(Category::getCategoryId)).collect(Collectors.toList());
+                break;
+            case "newest":
+                cats = cats.stream().sorted(Comparator.comparing(Category::getCategoryId).reversed()).collect(Collectors.toList());
+                break;
+            default:
+                cats = cats.stream().sorted(Comparator.comparing(Category::getName, String.CASE_INSENSITIVE_ORDER)).collect(Collectors.toList());
+        }
+        model.addAttribute("categories", cats);
         model.addAttribute("success", success);
         model.addAttribute("error", error);
+        model.addAttribute("sort", sort);
         return "admin/categories";
     }
 
@@ -134,10 +230,20 @@ public class AdminController {
     // USERS
     @GetMapping("/users")
     public String listUsers(Model model, @RequestParam(value = "success", required = false) String success,
-                            @RequestParam(value = "error", required = false) String error) {
-        model.addAttribute("users", userRepository.findAll());
+                            @RequestParam(value = "error", required = false) String error,
+                            @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort) {
+        List<User> users = userRepository.findAll();
+        switch (sort) {
+            case "oldest": users = users.stream().sorted(Comparator.comparing(User::getUserId)).collect(Collectors.toList()); break;
+            case "username": users = users.stream().sorted(Comparator.comparing(User::getUsername, String.CASE_INSENSITIVE_ORDER)).collect(Collectors.toList()); break;
+            case "email": users = users.stream().sorted(Comparator.comparing(User::getEmail, String.CASE_INSENSITIVE_ORDER)).collect(Collectors.toList()); break;
+            case "role": users = users.stream().sorted(Comparator.comparing(u -> u.getRole().name())).collect(Collectors.toList()); break;
+            default: users = users.stream().sorted(Comparator.comparing(User::getUserId).reversed()).collect(Collectors.toList());
+        }
+        model.addAttribute("users", users);
         model.addAttribute("success", success);
         model.addAttribute("error", error);
+        model.addAttribute("sort", sort);
         return "admin/users";
     }
 
@@ -207,6 +313,19 @@ public class AdminController {
 
     @PostMapping("/users/{id}/delete")
     public String deleteUser(@PathVariable Integer id, RedirectAttributes ra) {
+        Optional<User> opt = userRepository.findById(id);
+        if (opt.isEmpty()) {
+            ra.addAttribute("error", "User not found");
+            return "redirect:/admin/users";
+        }
+        User u = opt.get();
+        long addrCount = addressRepository.countByUser(u);
+        long orderCount = ordersRepository.findByUser(u).size();
+        if (addrCount > 0 || orderCount > 0) {
+            String reason = addrCount > 0 ? "addresses" : "orders";
+            ra.addAttribute("error", "Cannot delete: user linked with existing " + reason);
+            return "redirect:/admin/users";
+        }
         userRepository.deleteById(id);
         ra.addAttribute("success", "User deleted");
         return "redirect:/admin/users";
@@ -215,10 +334,18 @@ public class AdminController {
     // ORDERS
     @GetMapping("/orders")
     public String listOrders(Model model, @RequestParam(value = "success", required = false) String success,
-                             @RequestParam(value = "error", required = false) String error) {
-        model.addAttribute("orders", ordersRepository.findAll());
+                             @RequestParam(value = "error", required = false) String error,
+                             @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort) {
+        List<Orders> all = ordersRepository.findAll();
+        if ("oldest".equalsIgnoreCase(sort)) {
+            all = all.stream().sorted(Comparator.comparing(Orders::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))).collect(Collectors.toList());
+        } else {
+            all = all.stream().sorted(Comparator.comparing(Orders::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed()).collect(Collectors.toList());
+        }
+        model.addAttribute("orders", all);
         model.addAttribute("success", success);
         model.addAttribute("error", error);
+        model.addAttribute("sort", sort);
         return "admin/orders";
     }
 
@@ -239,10 +366,20 @@ public class AdminController {
     // PAYMENTS
     @GetMapping("/payments")
     public String listPayments(Model model, @RequestParam(value = "success", required = false) String success,
-                               @RequestParam(value = "error", required = false) String error) {
-        model.addAttribute("payments", paymentRepository.findAll());
+                               @RequestParam(value = "error", required = false) String error,
+                               @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort) {
+        List<Payment> list = paymentRepository.findAll();
+        switch (sort) {
+            case "oldest": list = list.stream().sorted(Comparator.comparing(Payment::getUpdatedAt, Comparator.nullsLast(Comparator.naturalOrder()))).collect(Collectors.toList()); break;
+            case "amountAsc": list = list.stream().sorted(Comparator.comparing(Payment::getAmount)).collect(Collectors.toList()); break;
+            case "amountDesc": list = list.stream().sorted(Comparator.comparing(Payment::getAmount).reversed()).collect(Collectors.toList()); break;
+            case "status": list = list.stream().sorted(Comparator.comparing(p -> p.getStatus().name())).collect(Collectors.toList()); break;
+            default: list = list.stream().sorted(Comparator.comparing(Payment::getUpdatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed()).collect(Collectors.toList());
+        }
+        model.addAttribute("payments", list);
         model.addAttribute("success", success);
         model.addAttribute("error", error);
+        model.addAttribute("sort", sort);
         return "admin/payments";
     }
 
@@ -263,10 +400,20 @@ public class AdminController {
     // ADDRESSES
     @GetMapping("/addresses")
     public String listAddresses(Model model, @RequestParam(value = "success", required = false) String success,
-                                @RequestParam(value = "error", required = false) String error) {
-        model.addAttribute("addresses", addressRepository.findAll());
+                                @RequestParam(value = "error", required = false) String error,
+                                @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort) {
+        List<Address> addrs = addressRepository.findAll();
+        switch (sort) {
+            case "oldest": addrs = addrs.stream().sorted(Comparator.comparing(Address::getAddressId)).collect(Collectors.toList()); break;
+            case "city": addrs = addrs.stream().sorted(Comparator.comparing(Address::getCity, String.CASE_INSENSITIVE_ORDER)).collect(Collectors.toList()); break;
+            case "state": addrs = addrs.stream().sorted(Comparator.comparing(Address::getState, String.CASE_INSENSITIVE_ORDER)).collect(Collectors.toList()); break;
+            case "user": addrs = addrs.stream().sorted(Comparator.comparing(a -> a.getUser() != null ? a.getUser().getUsername() : "", String.CASE_INSENSITIVE_ORDER)).collect(Collectors.toList()); break;
+            default: addrs = addrs.stream().sorted(Comparator.comparing(Address::getAddressId).reversed()).collect(Collectors.toList());
+        }
+        model.addAttribute("addresses", addrs);
         model.addAttribute("success", success);
         model.addAttribute("error", error);
+        model.addAttribute("sort", sort);
         return "admin/addresses";
     }
 

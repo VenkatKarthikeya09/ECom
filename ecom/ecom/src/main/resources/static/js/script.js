@@ -200,9 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('cart', JSON.stringify(cart));
     };
 
+    const computeLocalCartQty = () => Object.values(cart).reduce((sum, it) => sum + Number(it.quantity || 0), 0);
+
     const updateCartSize = () => {
-        const cartSize = Object.keys(cart).length;
-        cartSizeCounter.textContent = cartSize;
+        const localQty = computeLocalCartQty();
+        cartSizeCounter.textContent = localQty;
+        if (window.updateNavbarCartBadge) window.updateNavbarCartBadge();
     };
 
     const showNotification = (productName, imageUrl, message) => {

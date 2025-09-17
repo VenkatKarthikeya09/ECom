@@ -12,9 +12,15 @@
 <main class="container my-5 pt-5">
     <div class="d-flex justify-content-between align-items-center">
         <h3 class="mb-3">Order <span th:text="${order.orderRef != null ? order.orderRef : '#' + order.orderId}"></span></h3>
-        <form th:action="@{'/orders/' + ${order.orderId} + '/cancel'}" method="post" th:if="${order.status != T(com.example.ecom.model.Orders.Status).CANCELLED and order.status != T(com.example.ecom.model.Orders.Status).PAID}">
-            <button class="btn btn-outline-danger" onclick="return confirm('Cancel this order?');">Cancel order</button>
-        </form>
+        <div class="d-flex gap-2">
+            <form th:action="@{'/orders/' + ${order.orderId} + '/remove'}" method="post" th:if="${canRemove}">
+                <button class="btn btn-outline-danger" onclick="return confirm('Remove this unpaid order?');">Remove</button>
+            </form>
+            <form th:action="@{'/orders/' + ${order.orderId} + '/cancel'}" method="post" th:if="${canCancel}">
+                <button class="btn btn-outline-danger" onclick="return confirm('Cancel this order?');">Cancel order</button>
+            </form>
+            <button class="btn btn-outline-secondary" th:if="${!canCancel and !canRemove}" disabled>Can’t cancel at this time</button>
+        </div>
     </div>
     <div class="row g-3">
         <div class="col-md-6">

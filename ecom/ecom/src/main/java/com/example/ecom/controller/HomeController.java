@@ -37,7 +37,7 @@ public class HomeController {
 
     @GetMapping("/admin_home")
     public String adminHome() {
-        return "admin_home";
+        return "redirect:/admin";
     }
 
     private List<Product> getTrendingProducts() {

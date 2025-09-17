@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartSizeNavElement = document.getElementById('cart-size');
     let notificationTimeout;
     
+    // --- Savings UI refs ---
+    const savingsDetailsList = document.getElementById('savings-details-list');
+    const cartSavedAmountElement = document.getElementById('cart-saved-amount');
+    
     // --- Confirmation Modal Logic ---
     const confirmationModal = document.getElementById('confirmation-modal');
     const confirmYesBtn = document.getElementById('confirm-yes');
@@ -91,6 +95,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- Savings rendering ---
+    const renderSavings = (cart) => {
+        if (!savingsDetailsList || !cartSavedAmountElement) return;
+        savingsDetailsList.innerHTML = '';
+        let savedTotal = 0;
+        for (const productId in cart) {
+            const item = cart[productId];
+            const price = parseFloat(item.price);
+            const quantity = parseFloat(item.quantity);
+            // Heuristic: List price is 20% above selling price
+            const listPrice = price * 1.2;
+            const perUnitSaved = Math.max(0, listPrice - price);
+            const saved = perUnitSaved * quantity;
+            savedTotal += saved;
+            const row = `
+                <li class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">${item.name} (${quantity}x)</span>
+                    <span class="text-success">₹${saved.toFixed(2)}</span>
+                </li>`;
+            savingsDetailsList.innerHTML += row;
+        }
+        cartSavedAmountElement.textContent = `₹${savedTotal.toFixed(2)}`;
+    };
+
     // --- Main Cart Rendering Logic ---
     const updateCartTotals = () => {
         const cart = JSON.parse(localStorage.getItem('cart')) || {};
@@ -111,6 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
         finalTotalPriceElement.textContent = `₹${totalPrice.toFixed(2)}`;
         cartItemCountElement.textContent = totalItems;
         cartSizeNavElement.textContent = totalItems;
+
+        // Render savings after totals so UI shows consistent figures
+        renderSavings(cart);
 
         if (totalItems > 0) {
             checkoutBtn.classList.remove('disabled');

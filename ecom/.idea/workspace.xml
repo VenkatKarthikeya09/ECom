@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="a3641783-982e-4ca6-850a-a6a755566709" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/controller/AdminController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/controller/AdminController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/controller/CheckoutController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/controller/CheckoutController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/controller/HomeController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/controller/HomeController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/controller/OrdersController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/controller/OrdersController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/repository/AddressRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/ecom/src/main/java/com/example/ecom/repository/AddressRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ecom/src/main/resources/templates/admin/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/ecom/src/main/resources/templates/admin/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ecom/src/main/resources/templates/admin/products.html" beforeDir="false" afterPath="$PROJECT_DIR$/ecom/src/main/resources/templates/admin/products.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ecom/src/main/resources/templates/orders/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/ecom/src/main/resources/templates/orders/detail.html" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 1
+}]]></component>
+  <component name="ProjectId" id="32oPDUrT84ZxJLfIW59FF7u4Nnn" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/Users/2430325/Downloads/New folder/ecom"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a3641783-982e-4ca6-850a-a6a755566709" name="Changes" comment="" />
+      <created>1758083832651</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1758083832651</updated>
+    </task>
+    <servers />
+  </component>
+</project>

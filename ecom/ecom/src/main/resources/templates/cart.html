@@ -39,13 +39,29 @@
                             </div>
                         </div>
 
+                        <p class="d-flex justify-content-between align-items-center mb-0 mt-2">
+                            <button class="btn btn-link text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#savingsDetails" aria-expanded="false" aria-controls="savingsDetails">
+                                View savings breakdown <i class="bi bi-chevron-down ms-1"></i>
+                            </button>
+                        </p>
+                        <div class="collapse" id="savingsDetails">
+                            <div class="card card-body p-0 border-0 my-3">
+                                <ul id="savings-details-list" class="list-unstyled mb-0">
+                                    </ul>
+                            </div>
+                        </div>
+
                         <div class="d-flex justify-content-between mb-2">
                             <span>Subtotal (<span id="cart-item-count">0</span> items)</span>
                             <span class="fw-bold" id="cart-total-price">₹0.00</span>
                         </div>
-                        <div class="d-flex justify-content-between mb-3">
+                        <div class="d-flex justify-content-between mb-2">
                             <span>Shipping</span>
                             <span class="text-success fw-bold">Free</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Saved</span>
+                            <span class="text-success fw-bold" id="cart-saved-amount">₹0.00</span>
                         </div>
                         <div class="d-flex justify-content-between fw-bold fs-5 border-top pt-3">
                             <span>Total</span>

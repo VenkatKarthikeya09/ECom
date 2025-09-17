@@ -22,10 +22,21 @@
     </div>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="fw-bold">Categories</h2>
-        <form method="post" action="/admin/categories" class="d-flex gap-2">
-            <input class="form-control" name="name" placeholder="New category name" required>
-            <button class="btn btn-gold">Add</button>
-        </form>
+        <div class="d-flex align-items-end gap-2">
+            <form method="get" action="/admin/categories" class="d-flex align-items-center gap-2">
+                <label class="text-muted">Sort</label>
+                <select class="form-select form-select-sm" name="sort" onchange="this.form.submit()">
+                    <option value="nameAsc" th:selected="${sort} == 'nameAsc'">Name A→Z</option>
+                    <option value="nameDesc" th:selected="${sort} == 'nameDesc'">Name Z→A</option>
+                    <option value="newest" th:selected="${sort} == 'newest'">Newest</option>
+                    <option value="oldest" th:selected="${sort} == 'oldest'">Oldest</option>
+                </select>
+            </form>
+            <form method="post" action="/admin/categories" class="d-flex gap-2">
+                <input class="form-control" name="name" placeholder="New category name" required>
+                <button class="btn btn-gold">Add</button>
+            </form>
+        </div>
     </div>
 
     <div class="table-responsive">

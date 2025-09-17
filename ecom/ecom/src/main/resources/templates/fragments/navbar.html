@@ -64,7 +64,49 @@
             </div>
         </div>
     </div>
+    <script>
+      // Inline so it ships with the navbar fragment on every page
+      async function updateNavbarCartBadge() {
+        try {
+          const badge = document.getElementById('cart-size');
+          if (!badge) return;
+          // Local cart qty total
+          let localQty = 0;
+          try {
+            const local = JSON.parse(localStorage.getItem('cart') || '{}');
+            Object.values(local).forEach(it => { localQty += Number(it.quantity || 0); });
+          } catch(e) { /* ignore */ }
+          // Server session cart size
+          let serverQty = 0;
+          try {
+            const resp = await fetch('/api/cart/size', { cache: 'no-store', credentials: 'same-origin' });
+            if (resp.ok) {
+              const data = await resp.json();
+              serverQty = Number(data.cartSize || 0);
+            }
+          } catch (e) { /* ignore */ }
+          const total = localQty + serverQty;
+          badge.textContent = total;
+        } catch (e) {}
+      }
+      window.updateNavbarCartBadge = updateNavbarCartBadge;
+      updateNavbarCartBadge();
+      document.addEventListener('DOMContentLoaded', updateNavbarCartBadge);
+      window.addEventListener('pageshow', updateNavbarCartBadge);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) updateNavbarCartBadge(); });
+      setInterval(updateNavbarCartBadge, 10000);
+    </script>
 </nav>
+
+<!-- Global Add to Cart Notification (available on all pages via navbar) -->
+<div id="cart-notification" class="cart-notification">
+    <img id="notification-img" src="" class="product-img" alt="product image">
+    <div class="message-content">
+        <h6 id="notification-name">Product Name</h6>
+        <p id="notification-message"></p>
+    </div>
+    <button class="close-btn" onclick="if(window.hideNotification){window.hideNotification();} else { var el=document.getElementById('cart-notification'); if(el) el.classList.remove('show'); }">&times;</button>
+</div>
 
 <!-- Login Modal -->
 <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
@@ -93,6 +135,14 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Fallback close function in case /js/script.js is not loaded on a page
+  window.hideNotification = window.hideNotification || function() {
+    var el = document.getElementById('cart-notification');
+    if (el) el.classList.remove('show');
+  };
+</script>
 
 <!-- Signup Modal -->
 <div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
@@ -161,6 +211,40 @@
 </div>
 
 <script>
+  async function updateNavbarCartBadge() {
+    try {
+      const badge = document.getElementById('cart-size');
+      if (!badge) return;
+      // Local cart qty total
+      let localQty = 0;
+      try {
+        const local = JSON.parse(localStorage.getItem('cart') || '{}');
+        Object.values(local).forEach(it => { localQty += Number(it.quantity || 0); });
+      } catch(e) { /* ignore */ }
+      // Server session cart size
+      let serverQty = 0;
+      try {
+        const resp = await fetch('/api/cart/size', { cache: 'no-store', credentials: 'same-origin' });
+        if (resp.ok) {
+          const data = await resp.json();
+          serverQty = Number(data.cartSize || 0);
+        }
+      } catch (e) { /* ignore network errors */ }
+      const total = localQty + serverQty;
+      badge.textContent = total;
+    } catch (e) {}
+  }
+  // Update in all situations
+  window.updateNavbarCartBadge = updateNavbarCartBadge;
+  // Run immediately when script loads (works even if DOMContentLoaded already fired)
+  updateNavbarCartBadge();
+  // Also on DOMContentLoaded, pageshow (bfcache), and visibility change
+  document.addEventListener('DOMContentLoaded', updateNavbarCartBadge);
+  window.addEventListener('pageshow', updateNavbarCartBadge);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updateNavbarCartBadge(); });
+  // Fallback: periodic refresh while page is open
+  setInterval(updateNavbarCartBadge, 10000);
+
   document.addEventListener('DOMContentLoaded', function () {
     // Hide suggestions when modals open
     const hideSuggestions = () => {
@@ -230,6 +314,7 @@
             if (resp.ok) {
               localStorage.removeItem('cart');
               modal.hide();
+              updateNavbarCartBadge();
               window.location.href = '/cart';
             }
           } catch (e) {

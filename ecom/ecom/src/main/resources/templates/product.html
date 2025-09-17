@@ -18,8 +18,11 @@
             </div>
             <div class="col-md-6">
                 <h1 class="fw-bold mb-3" th:text="${product.name}">Product Name</h1>
-                <p class="lead text-primary fw-bold fs-3" th:text="'₹' + ${product.price}">₹0.00</p>
-                <p class="text-muted" th:text="${product.description}">Product description goes here.</p>
+                <div class="d-flex align-items-baseline">
+                    <p class="lead text-primary fw-bold fs-3 mb-0 me-2" th:text="'₹' + ${product.price}">₹0.00</p>
+                    <p class="text-muted text-decoration-line-through mb-0">₹<span th:text="${#numbers.formatDecimal(product.price * 1.2, 1, 'NONE', 2, 'POINT')}"></span></p>
+                </div>
+                <p class="text-muted mt-2" th:text="${product.description}">Product description goes here.</p>
                 <div class="mt-4">
                     <button class="btn btn-success rounded-pill px-4" id="add-to-cart-detail"
                         th:data-product-id="${product.productId}"
@@ -28,6 +31,11 @@
                         th:data-product-price="${product.price}">
                         <i class="bi bi-cart-plus"></i> Add to Cart
                     </button>
+                    <div class="quantity-controls d-none" id="detail-qty-controls" style="justify-content:flex-start">
+                        <button class="btn btn-outline-primary btn-sm rounded-pill px-3 me-2" id="detail-minus">-</button>
+                        <input type="text" class="form-control quantity-input text-center rounded-pill" id="detail-qty" value="1" readonly>
+                        <button class="btn btn-outline-primary btn-sm rounded-pill px-3 ms-2" id="detail-plus">+</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -46,7 +54,7 @@
                                 <p class="card-text text-muted mb-2" th:text="${p.description}">Short description</p>
                                 <div class="d-flex align-items-baseline mt-auto">
                                     <p class="fw-bold fs-5 text-primary mb-0 me-2" th:text="'₹' + ${p.price}">₹0.00</p>
-                                    <p class="text-muted text-decoration-line-through mb-0 price-old">₹0.00</p>
+                                    <p class="text-muted text-decoration-line-through mb-0 price-old">₹<span th:text="${#numbers.formatDecimal(p.price * 1.2, 1, 'NONE', 2, 'POINT')}"></span></p>
                                 </div>
                             </div>
                         </a>
@@ -67,20 +75,84 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const btn = document.getElementById('add-to-cart-detail');
-            if (!btn) return;
+            const qtyControls = document.getElementById('detail-qty-controls');
+            const minusBtn = document.getElementById('detail-minus');
+            const plusBtn = document.getElementById('detail-plus');
+            const qtyInput = document.getElementById('detail-qty');
+            if (!btn || !qtyControls || !minusBtn || !plusBtn || !qtyInput) return;
+
+            const id = String(btn.dataset.productId);
+            const name = btn.dataset.productName;
+            const image = btn.dataset.productImage;
+            const price = parseFloat(btn.dataset.productPrice);
+
+            const getCart = () => JSON.parse(localStorage.getItem('cart') || '{}');
+            const setCart = (cart) => localStorage.setItem('cart', JSON.stringify(cart));
+            const updateBadge = () => { if (window.updateNavbarCartBadge) window.updateNavbarCartBadge(); };
+
+            const showToast = () => {
+                const n = document.getElementById('cart-notification');
+                const img = document.getElementById('notification-img');
+                const title = document.getElementById('notification-name');
+                const msg = document.getElementById('notification-message');
+                if (n && img && title && msg) {
+                    img.src = image;
+                    title.textContent = name;
+                    msg.textContent = 'Item added to your cart.';
+                    n.classList.add('show');
+                    setTimeout(() => { n.classList.remove('show'); }, 3000);
+                }
+            };
+
+            const updateUI = (quantity) => {
+                if (quantity > 0) {
+                    btn.classList.add('d-none');
+                    qtyControls.classList.remove('d-none');
+                    qtyInput.value = quantity;
+                } else {
+                    qtyControls.classList.add('d-none');
+                    btn.classList.remove('d-none');
+                }
+            };
+
+            // Initialize UI based on cart
+            (function init(){
+                const cart = getCart();
+                const q = cart[id] ? Number(cart[id].quantity || 0) : 0;
+                updateUI(q);
+            })();
+
             btn.addEventListener('click', function () {
-                const cart = JSON.parse(localStorage.getItem('cart')) || {};
-                const id = String(this.dataset.productId);
-                const name = this.dataset.productName;
-                const image = this.dataset.productImage;
-                const price = parseFloat(this.dataset.productPrice);
+                const cart = getCart();
                 if (cart[id]) {
                     cart[id].quantity++;
                 } else {
                     cart[id] = { name, image, price, quantity: 1 };
                 }
-                localStorage.setItem('cart', JSON.stringify(cart));
-                alert('Added to cart');
+                setCart(cart);
+                updateUI(cart[id].quantity);
+                updateBadge();
+                showToast();
+            });
+
+            minusBtn.addEventListener('click', function(){
+                const cart = getCart();
+                if (!cart[id]) return;
+                cart[id].quantity = Math.max(0, Number(cart[id].quantity) - 1);
+                if (cart[id].quantity === 0) { delete cart[id]; }
+                setCart(cart);
+                const q = cart[id] ? cart[id].quantity : 0;
+                updateUI(q);
+                updateBadge();
+            });
+
+            plusBtn.addEventListener('click', function(){
+                const cart = getCart();
+                if (!cart[id]) { cart[id] = { name, image, price, quantity: 0 }; }
+                cart[id].quantity = Number(cart[id].quantity) + 1;
+                setCart(cart);
+                updateUI(cart[id].quantity);
+                updateBadge();
             });
         });
     </script>

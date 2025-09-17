@@ -26,6 +26,42 @@
     <div class="mb-3" th:if="${error}">
         <div class="alert alert-danger" th:text="${error}"></div>
     </div>
+
+    <form method="get" action="/admin/products" class="card card-body mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Search</label>
+                <input class="form-control" name="q" placeholder="name or description" th:value="${q}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Category</label>
+                <select class="form-select" name="categoryId">
+                    <option value="">All</option>
+                    <option th:each="c : ${categories}" th:value="${c.categoryId}" th:selected="${c.categoryId == categoryId}" th:text="${c.name}"></option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Min price</label>
+                <input class="form-control" type="number" step="0.01" name="minPrice" th:value="${minPrice}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Max price</label>
+                <input class="form-control" type="number" step="0.01" name="maxPrice" th:value="${maxPrice}">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Min stock</label>
+                <input class="form-control" type="number" name="minStock" th:value="${minStock}">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Max stock</label>
+                <input class="form-control" type="number" name="maxStock" th:value="${maxStock}">
+            </div>
+            <div class="col-md-12 d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="fw-bold">Products</h2>
         <button class="btn btn-gold" data-bs-toggle="collapse" data-bs-target="#createForm">Add Product</button>
@@ -40,17 +76,33 @@
                         <input class="form-control" name="name" required>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Price</label>
-                        <input class="form-control" name="price" type="number" step="0.01" required>
+                        <label class="form-label">Price (Final)</label>
+                        <input class="form-control" name="price" type="number" step="0.01" id="create-price" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Stock</label>
                         <input class="form-control" name="stockQuantity" type="number" required>
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Discount % (optional)</label>
+                        <input class="form-control" type="number" min="0" max="95" step="1" id="create-discount" placeholder="e.g. 20">
+                        <div class="form-text" id="create-discount-help">Enter discount to preview. Final price will be saved from the Price field.</div>
+                    </div>
+                    <div class="col-md-8 d-flex align-items-end">
+                        <div class="text-muted" id="create-discount-preview"></div>
+                    </div>
                     <div class="col-12">
                         <label class="form-label">Image URL</label>
-                        <input class="form-control" name="imageUrl" required>
-                        <small class="text-muted">Tip: Use direct image URLs (jpg, png, webp). External images are loaded via our proxy for reliability.</small>
+                        <div class="input-group">
+                            <input class="form-control" name="imageUrl" id="create-image-url" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('create-image-file').click()">Choose file</button>
+                            <button class="btn btn-outline-primary" type="button" onclick="uploadCreateImage()">Upload</button>
+                        </div>
+                        <small class="text-muted">Paste a direct image URL or choose and upload a local file.</small>
+                    </div>
+                    <div class="col-12">
+                        <input class="form-control d-none" type="file" accept="image/*" id="create-image-file">
+                        <img id="create-image-preview" class="mt-2 d-none" style="width:120px;height:120px;object-fit:cover;border-radius:8px;" alt="preview">
                     </div>
                     <div class="col-12">
                         <label class="form-label">Description</label>
@@ -88,7 +140,12 @@
                 <tr>
                     <td th:text="${p.productId}"></td>
                     <td>
-                        <img th:src="@{'/img-proxy'(url=${p.imageUrl})}" loading="lazy" alt="img" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" onerror="this.onerror=null;this.src='https://loremflickr.com/96/96/product'">
+                        <img th:if="${#strings.startsWith(p.imageUrl, 'http')}" th:src="@{'/img-proxy'(url=${p.imageUrl}, w=96, h=96)}"
+                             loading="lazy" alt="img" style="width:48px;height:48px;object-fit:cover;border-radius:6px;"
+                             onerror="this.onerror=null;this.src='https://loremflickr.com/96/96/product'">
+                        <img th:if="${!#strings.startsWith(p.imageUrl, 'http')}" th:src="@{'/img-proxy'(path=${p.imageUrl}, w=96, h=96)}"
+                             loading="lazy" alt="img" style="width:48px;height:48px;object-fit:cover;border-radius:6px;"
+                             onerror="this.onerror=null;this.src='https://loremflickr.com/96/96/product'">
                     </td>
                     <td th:text="${p.name}"></td>
                     <td th:text="${p.price}"></td>
@@ -111,17 +168,35 @@
                                         <input class="form-control" name="name" th:value="${p.name}" required>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Price</label>
-                                        <input class="form-control" name="price" type="number" step="0.01" th:value="${p.price}" required>
+                                        <label class="form-label">Price (Final)</label>
+                                        <input class="form-control" name="price" type="number" step="0.01" th:value="${p.price}" id="price-[[${p.productId}]]" required>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Stock</label>
                                         <input class="form-control" name="stockQuantity" type="number" th:value="${p.stockQuantity}" required>
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Discount % (optional)</label>
+                                        <input class="form-control" type="number" min="0" max="95" step="1" th:id="${'discount-' + p.productId}" placeholder="e.g. 20">
+                                        <div class="form-text" th:id="${'discount-help-' + p.productId}">Enter discount to preview. Update the Price field to save the discounted price.</div>
+                                    </div>
+                                    <div class="col-md-8 d-flex align-items-end">
+                                        <div class="text-muted" th:id="${'discount-preview-' + p.productId}"></div>
+                                    </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Image URL</label>
-                                        <input class="form-control" name="imageUrl" th:value="${p.imageUrl}" required oninput="this.nextElementSibling.src=this.value">
-                                        <img th:src="@{'/img-proxy'(url=${p.imageUrl})}" loading="lazy" alt="preview" class="mt-2" style="width:120px;height:120px;object-fit:cover;border-radius:8px;" onerror="this.onerror=null;this.src='https://loremflickr.com/240/240/product'">
+                                        <div class="input-group">
+                                            <input class="form-control" name="imageUrl" th:value="${p.imageUrl}" required oninput="this.parentElement.nextElementSibling.src=this.value">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="this.parentElement.nextElementSibling.nextElementSibling.click()">Choose file</button>
+                                            <button class="btn btn-outline-primary" type="button" onclick="uploadEditImage(this)">Upload</button>
+                                        </div>
+                                        <img th:if="${#strings.startsWith(p.imageUrl, 'http')}" th:src="@{'/img-proxy'(url=${p.imageUrl}, w=120, h=120)}"
+                                             loading="lazy" alt="preview" class="mt-2" style="width:120px;height:120px;object-fit:cover;border-radius:8px;"
+                                             onerror="this.onerror=null;this.src='https://loremflickr.com/240/240/product'">
+                                        <img th:if="${!#strings.startsWith(p.imageUrl, 'http')}" th:src="@{'/img-proxy'(path=${p.imageUrl}, w=120, h=120)}"
+                                             loading="lazy" alt="preview" class="mt-2" style="width:120px;height:120px;object-fit:cover;border-radius:8px;"
+                                             onerror="this.onerror=null;this.src='https://loremflickr.com/240/240/product'">
+                                        <input class="form-control d-none" type="file" accept="image/*" onchange="previewToInput(this)">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Description</label>
@@ -149,11 +224,73 @@
     <div class="d-flex justify-content-between align-items-center mt-3" th:if="${page}">
         <div>Page <span th:text="${page.number + 1}"></span> of <span th:text="${page.totalPages}"></span> — <span th:text="${page.totalElements}"></span> items</div>
         <div class="btn-group">
-            <a class="btn btn-outline-secondary" th:classappend="${page.first} ? ' disabled'" th:href="@{'/admin/products'(page=${page.number - 1}, size=${page.size})}">&#8592; Prev</a>
-            <a class="btn btn-outline-secondary" th:classappend="${page.last} ? ' disabled'" th:href="@{'/admin/products'(page=${page.number + 1}, size=${page.size})}">Next &#8594;</a>
+            <a class="btn btn-outline-secondary" th:classappend="${page.first} ? ' disabled'" th:href="@{'/admin/products'(page=${page.number - 1}, size=${page.size}, q=${q}, categoryId=${categoryId}, minPrice=${minPrice}, maxPrice=${maxPrice}, minStock=${minStock}, maxStock=${maxStock})}">&#8592; Prev</a>
+            <a class="btn btn-outline_secondary" th:classappend="${page.last} ? ' disabled'" th:href="@{'/admin/products'(page=${page.number + 1}, size=${page.size}, q=${q}, categoryId=${categoryId}, minPrice=${minPrice}, maxPrice=${maxPrice}, minStock=${minStock}, maxStock=${maxStock})}">Next &#8594;</a>
         </div>
     </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function computePreview(basePrice, discount) {
+    const p = parseFloat(basePrice);
+    const d = parseFloat(discount);
+    if (!isFinite(p) || !isFinite(d) || d <= 0) return '';
+    const off = Math.max(0, Math.min(95, d));
+    const discounted = p * (1 - off/100);
+    const saved = p - discounted;
+    return `List: ₹${p.toFixed(2)} → After ${off}%: ₹${discounted.toFixed(2)} (You save ₹${saved.toFixed(2)})`;
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    // Create form live preview
+    const cp = document.getElementById('create-price');
+    const cd = document.getElementById('create-discount');
+    const preview = document.getElementById('create-discount-preview');
+    function updateCreatePreview(){ preview.textContent = computePreview(cp.value, cd.value); }
+    if (cp && cd && preview) {
+      cp.addEventListener('input', updateCreatePreview);
+      cd.addEventListener('input', updateCreatePreview);
+    }
+    // Edit forms live preview
+    document.querySelectorAll('[id^="price-"]').forEach(function(priceInput){
+      const id = priceInput.id.replace('price-','');
+      const disc = document.getElementById('discount-' + id);
+      const prev = document.getElementById('discount-preview-' + id);
+      function update(){ if (prev) prev.textContent = computePreview(priceInput.value, disc ? disc.value : ''); }
+      if (disc && prev) { priceInput.addEventListener('input', update); disc.addEventListener('input', update); }
+    });
+  });
+  async function uploadCreateImage(){
+    const fileInput = document.getElementById('create-image-file');
+    if (!fileInput.files || !fileInput.files[0]) return;
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    const resp = await fetch('/admin/upload', { method: 'POST', body: formData });
+    const json = await resp.json();
+    if (json.url){
+      document.getElementById('create-image-url').value = json.url;
+      const prev = document.getElementById('create-image-preview');
+      prev.src = json.url; prev.classList.remove('d-none');
+    }
+  }
+  function previewToInput(input){
+    const url = URL.createObjectURL(input.files[0]);
+    const group = input.previousElementSibling.previousElementSibling; // input-group
+    const urlInput = group.querySelector('input[name="imageUrl"]');
+    urlInput.value = url;
+    const img = group.nextElementSibling; img.src = url;
+  }
+  async function uploadEditImage(btn){
+    const group = btn.parentElement; // input-group
+    const filePicker = group.parentElement.nextElementSibling; // hidden file input
+    if (!filePicker.files || !filePicker.files[0]) { filePicker.click(); return; }
+    const formData = new FormData(); formData.append('file', filePicker.files[0]);
+    const resp = await fetch('/admin/upload', { method: 'POST', body: formData });
+    const json = await resp.json();
+    if (json.url){
+      const urlInput = group.querySelector('input[name="imageUrl"]');
+      urlInput.value = json.url; group.parentElement.querySelector('img').src = json.url;
+    }
+  }
+</script>
 </body>
 </html> 

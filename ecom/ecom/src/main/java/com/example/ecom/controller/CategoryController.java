@@ -1,17 +1,18 @@
 package com.example.ecom.controller;
 
-import com.example.ecom.model.Category;
-import com.example.ecom.model.Product;
-import com.example.ecom.service.CategoryService;
-import com.example.ecom.service.ProductService;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import java.util.List;
-import java.util.Optional;
+import com.example.ecom.model.Category;
+import com.example.ecom.model.Product;
+import com.example.ecom.service.CategoryService;
+import com.example.ecom.service.ProductService;
 
 @Controller
 public class CategoryController {
@@ -28,6 +29,11 @@ public class CategoryController {
 
         if (category.isPresent()) {
             List<Product> products = productService.getProductsByCategoryId(categoryId);
+            products.forEach(p -> {
+                if (p.getImageUrl() != null && !p.getImageUrl().isBlank() && !p.getImageUrl().startsWith("/img-proxy")) {
+                    p.setImageUrl("/img-proxy?url=" + p.getImageUrl());
+                }
+            });
             model.addAttribute("categoryName", category.get().getName());
             model.addAttribute("products", products);
             return "category";

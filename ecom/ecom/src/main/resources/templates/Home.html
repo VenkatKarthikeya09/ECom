@@ -105,7 +105,7 @@
                         <p class="card-text text-muted mb-2 desc-clamp" th:text="${p.description}" onclick="this.classList.toggle('desc-expanded'); this.classList.toggle('desc-clamp');">Short description</p>
                         <div class="d-flex align-items-baseline mt-auto">
                             <p class="fw-bold fs-5 text-primary mb-0 me-2" th:text="'₹' + ${p.price}">₹199.99</p>
-                            <p class="text-muted text-decoration-line-through mb-0 price-old">₹250.00</p>
+                            <p class="text-muted text-decoration-line-through mb-0 price-old">₹<span th:text="${#numbers.formatDecimal(p.price * 1.2, 1, 'NONE', 2, 'POINT')}"></span></p>
                         </div>
                         <div class="w-100 mt-3" th:attr="data-product-id=${p.productId}">
                             <button class="btn btn-success w-100 add-to-cart-btn rounded-pill shadow-sm"
@@ -147,7 +147,7 @@
                             <p class="card-text text-muted mb-2 desc-clamp" th:text="${product.description}" onclick="this.classList.toggle('desc-expanded'); this.classList.toggle('desc-clamp');">Short description of the product.</p>
                             <div class="d-flex align-items-baseline mt-auto">
                                 <p class="fw-bold fs-5 text-primary mb-0 me-2" th:text="'₹' + ${product.price}">₹199.99</p>
-                                <p class="text-muted text-decoration-line-through mb-0 price-old">₹250.00</p>
+                                <p class="text-muted text-decoration-line-through mb-0 price-old">₹<span th:text="${#numbers.formatDecimal(product.price * 1.2, 1, 'NONE', 2, 'POINT')}"></span></p>
                             </div>
                             <!-- This is the dynamic container for the button/quantity controls -->
                             <div class="w-100 mt-3" th:attr="data-product-id=${product.productId}">

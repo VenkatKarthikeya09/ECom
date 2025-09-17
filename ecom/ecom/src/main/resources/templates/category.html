@@ -25,10 +25,10 @@
                     </div>
                     <div class="card-body d-flex flex-column p-4">
                         <h5 class="card-title fw-bold" th:text="${product.name}">Product Name</h5>
-                        <p class="card-text text-muted mb-2" th:text="${product.description}">Short description of the product.</p>
+                        <p class="card-text text-muted mb-2 desc-clamp" th:text="${product.description}" onclick="this.classList.toggle('desc-expanded'); this.classList.toggle('desc-clamp');">Short description of the product.</p>
                         <div class="d-flex align-items-baseline mt-auto">
                             <p class="fw-bold fs-5 text-primary mb-0 me-2" th:text="'₹' + ${product.price}">$199.99</p>
-                            <p class="text-muted text-decoration-line-through mb-0 price-old">₹250.00</p>
+                            <p class="text-muted text-decoration-line-through mb-0 price-old">₹<span th:text="${#numbers.formatDecimal(product.price * 1.2, 1, 'NONE', 2, 'POINT')}"></span></p>
                         </div>
                         <div class="w-100 mt-3" th:attr="data-product-id=${product.productId}">
                         <button class="btn btn-success w-100 add-to-cart-btn mt-3 rounded-pill shadow-sm"

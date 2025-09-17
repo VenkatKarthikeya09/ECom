@@ -1,8 +1,7 @@
 package com.example.ecom.model;
 
-import java.io.Serializable;
 
-public class CartItem implements Serializable {
+public class CartItem {
     private Product product;
     private int quantity;
 

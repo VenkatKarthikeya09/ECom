@@ -7,6 +7,8 @@ import com.example.ecom.repository.OrdersRepository;
 import com.example.ecom.repository.PaymentRepository;
 import com.example.ecom.repository.UserRepository;
 import com.example.ecom.service.CartService;
+import com.example.ecom.service.ProductService;
+import com.example.ecom.service.AdminNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -32,6 +34,8 @@ public class CheckoutController {
     @Autowired private OrderItemRepository orderItemRepository;
     @Autowired private PaymentRepository paymentRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private ProductService productService;
+    @Autowired private AdminNotificationService notificationService;
 
     private Orders currentOrder;
 
@@ -57,7 +61,8 @@ public class CheckoutController {
     public String saveAddress(@RequestParam(value = "selectedAddressId", required = false) Integer selectedAddressId,
                               @ModelAttribute("address") CheckoutSession.Address addr,
                               @RequestParam(value = "emailSameAsAccount", required = false) String sameAsAccount,
-                              Authentication auth) {
+                              Authentication auth,
+                              RedirectAttributes ra) {
         Address usedAddress;
         if (selectedAddressId != null) {
             usedAddress = addressRepository.findById(selectedAddressId).orElse(null);
@@ -94,6 +99,13 @@ public class CheckoutController {
         }
 
         List<CartItem> items = new ArrayList<>(cartService.getCart().values());
+        // Check stock first
+        for (CartItem ci : items) {
+            if (ci.getProduct().getStockQuantity() < ci.getQuantity()) {
+                ra.addAttribute("error", "Currently unavailable: " + ci.getProduct().getName());
+                return "redirect:/cart";
+            }
+        }
         double subtotal = items.stream().mapToDouble(i -> i.getProduct().getPrice() * i.getQuantity()).sum();
         Orders order = new Orders();
         order.setAddress(usedAddress);
@@ -104,9 +116,15 @@ public class CheckoutController {
         order.setShipping(0.0);
         order.setTotal(subtotal);
         currentOrder = ordersRepository.save(order);
-        // store order id in session for continuity
-        checkoutSession.setCurrentOrderId(currentOrder.getOrderId());
         for (CartItem ci : items) {
+            // deduct stock
+            ci.getProduct().setStockQuantity(Math.max(0, ci.getProduct().getStockQuantity() - ci.getQuantity()));
+            productService.save(ci.getProduct());
+            if (ci.getProduct().getStockQuantity() == 0) {
+                notificationService.add("STOCK", "Out of stock: " + ci.getProduct().getName(), "/admin/products?q=" + ci.getProduct().getName());
+            } else if (ci.getProduct().getStockQuantity() <= 5) {
+                notificationService.add("STOCK", "Low stock: " + ci.getProduct().getName() + " (" + ci.getProduct().getStockQuantity() + ")", "/admin/products?q=" + ci.getProduct().getName());
+            }
             OrderItem oi = new OrderItem();
             oi.setOrder(currentOrder);
             oi.setProduct(ci.getProduct());
@@ -116,6 +134,8 @@ public class CheckoutController {
             oi.setImageUrl(ci.getProduct().getImageUrl());
             orderItemRepository.save(oi);
         }
+        // store order id in session for continuity
+        checkoutSession.setCurrentOrderId(currentOrder.getOrderId());
         return "redirect:/checkout/review";
     }
 
@@ -153,7 +173,28 @@ public class CheckoutController {
     }
 
     @PostMapping("/update")
-    public String updateItem(@RequestParam Long productId, @RequestParam int quantity) {
+    public String updateItem(@RequestParam Long productId, @RequestParam int quantity, RedirectAttributes ra) {
+        // Adjust stock based on delta
+        Optional<com.example.ecom.model.Product> pOpt = productService.getProductById(productId);
+        if (pOpt.isPresent()) {
+            com.example.ecom.model.Product p = pOpt.get();
+            // find current quantity in cart
+            int currentQty = cartService.getCart().getOrDefault(productId, new CartItem(p, 0)).getQuantity();
+            int delta = quantity - currentQty; // positive means increasing cart
+            if (delta > 0 && p.getStockQuantity() < delta) {
+                ra.addAttribute("error", "Currently unavailable: " + p.getName());
+                return "redirect:/checkout/review";
+            }
+            // reduce stock when increasing
+            if (delta > 0) {
+                p.setStockQuantity(p.getStockQuantity() - delta);
+                productService.save(p);
+            } else if (delta < 0) {
+                // return stock when reducing
+                p.setStockQuantity(p.getStockQuantity() + (-delta));
+                productService.save(p);
+            }
+        }
         cartService.updateProductQuantity(productId, quantity);
         // recompute order items to match cart
         if (currentOrder != null) {
@@ -280,6 +321,7 @@ public class CheckoutController {
             currentOrder.setStatus(Orders.Status.COD_CONFIRMED);
             ordersRepository.save(currentOrder);
         }
+        notificationService.add("ORDER", "COD confirmed for order #" + (currentOrder != null ? currentOrder.getOrderId() : ""), "/admin/orders");
         cartService.getCart().clear();
         return "redirect:/checkout/confirmed";
     }
@@ -300,7 +342,11 @@ public class CheckoutController {
         if (currentOrder != null) {
             Payment p = paymentRepository.findByOrder(currentOrder).orElse(null);
             if (p != null) {
-                p.setReferenceNumber(verification.getReferenceNumber());
+                String ref = verification.getReferenceNumber();
+                if (ref == null || !ref.matches("\\d{12}")) {
+                    throw new IllegalArgumentException("Reference number must be exactly 12 digits");
+                }
+                p.setReferenceNumber(ref);
                 p.setBankName(verification.getBankName());
                 p.setPayerName(verification.getPayerName());
                 p.setStatus(Payment.Status.PAID);
@@ -309,6 +355,7 @@ public class CheckoutController {
                 ordersRepository.save(currentOrder);
             }
         }
+        notificationService.add("ORDER", "Payment verified for order #" + (currentOrder != null ? currentOrder.getOrderId() : ""), "/admin/orders");
         cartService.getCart().clear();
         return "redirect:/checkout/confirmed";
     }
@@ -338,6 +385,12 @@ public class CheckoutController {
                 return p;
             });
             if (method == CheckoutSession.PaymentMethod.CARD) {
+                if (referenceNumber == null || !referenceNumber.matches("\\d{12}")) {
+                    model.addAttribute("method", method);
+                    model.addAttribute("orderTotal", currentOrder.getTotal());
+                    model.addAttribute("error", "Reference number must be exactly 12 digits");
+                    return "checkout/payment";
+                }
                 payment.setMethod(Payment.Method.CARD);
                 payment.setCardHolder(cardHolder);
                 if (cardNumber != null && cardNumber.length() >= 4) {
@@ -348,6 +401,12 @@ public class CheckoutController {
                 payment.setStatus(Payment.Status.PAID);
                 currentOrder.setStatus(Orders.Status.PAID);
             } else if (method == CheckoutSession.PaymentMethod.UPI_QR) {
+                if (referenceNumber == null || !referenceNumber.matches("\\d{12}")) {
+                    model.addAttribute("method", method);
+                    model.addAttribute("orderTotal", currentOrder.getTotal());
+                    model.addAttribute("error", "Reference number must be exactly 12 digits");
+                    return "checkout/payment";
+                }
                 payment.setMethod(Payment.Method.UPI_QR);
                 String upi = (upiLocal != null ? upiLocal.trim() : "") + (upiSuffix != null ? upiSuffix : "");
                 payment.setUpiId(upi);
@@ -358,7 +417,7 @@ public class CheckoutController {
                 payment.setStatus(Payment.Status.PAID);
                 currentOrder.setStatus(Orders.Status.COD_CONFIRMED);
             }
-            // Verification/proof (if provided)
+            // Verification/proof
             if (referenceNumber != null && !referenceNumber.isBlank()) payment.setReferenceNumber(referenceNumber);
             if (bankName != null && !bankName.isBlank()) payment.setBankName(bankName);
             if (payerName != null && !payerName.isBlank()) payment.setPayerName(payerName);
@@ -376,6 +435,14 @@ public class CheckoutController {
         model.addAttribute("placed", true);
         // Also show orderRef for tracking
         model.addAttribute("orderRef", currentOrder != null ? currentOrder.getOrderRef() : null);
+        // Notify admin on successful payment (all methods) with details
+        if (currentOrder != null) {
+            String userPart = currentOrder.getUser() != null ? currentOrder.getUser().getUsername() : "guest";
+            String methodPart = method == CheckoutSession.PaymentMethod.CARD ? "CARD" : method == CheckoutSession.PaymentMethod.UPI_QR ? "UPI" : "COD";
+            String proofPart = (referenceNumber != null && !referenceNumber.isBlank()) ? (" ref=" + referenceNumber) : "";
+            String msg = "New order #" + currentOrder.getOrderId() + " by " + userPart + " | " + methodPart + proofPart + " | Total ₹" + String.format("%.2f", currentOrder.getTotal());
+            notificationService.add("ORDER", msg, "/admin/orders");
+        }
         return "checkout/confirmed";
     }
 

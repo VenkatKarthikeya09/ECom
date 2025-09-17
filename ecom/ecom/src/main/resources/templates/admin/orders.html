@@ -9,7 +9,20 @@
 <body>
 <div th:replace="fragments/navbar :: navbar"></div>
 <main class="container my-5 pt-5">
-  <h3 class="mb-3">Orders</h3>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Orders</h3>
+    <form method="get" class="d-flex align-items-center gap-2">
+      <label class="text-muted">Sort:</label>
+      <select class="form-select form-select-sm" name="sort" onchange="this.form.submit()">
+        <option value="newest" th:selected="${sort} == 'newest'">Recently placed first</option>
+        <option value="oldest" th:selected="${sort} == 'oldest'">Older ones first</option>
+      </select>
+    </form>
+  </div>
+  <div class="d-flex gap-2 mb-3">
+    <button class="btn btn-outline-secondary" onclick="history.back()">&#8592;</button>
+    <button class="btn btn-outline-secondary" onclick="history.forward()">&#8594;</button>
+  </div>
   <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
   <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
   <div class="table-responsive">

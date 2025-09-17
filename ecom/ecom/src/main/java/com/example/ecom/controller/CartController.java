@@ -76,6 +76,15 @@ public class CartController {
         return response;
     }
 
+    @GetMapping("/api/cart/size")
+    @ResponseBody
+    public Map<String, Object> cartSize() {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("cartSize", cartService.getCartSize());
+        return response;
+    }
+
     private double calculateTotalPrice() {
         return cartService.getCart().values().stream()
                 .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())

@@ -26,7 +26,7 @@
                 <td colspan="5" class="text-center text-muted">No items to review.</td>
             </tr>
             <tr th:each="ri : ${reviewItems}">
-                <td><img th:src="@{'/img-proxy'(url=${ri.imageUrl})}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;"></td>
+                <td><img th:src="@{'/img-proxy'(url=${ri.imageUrl}, w=120, h=120)}" class="img-thumbnail me-3" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" th:alt="${ri.name}"></td>
                 <td th:text="${ri.name}"></td>
                 <td>₹ <span th:text="${#numbers.formatDecimal(ri.price, 1, 'NONE', 2, 'POINT')}"></span></td>
                 <td>
